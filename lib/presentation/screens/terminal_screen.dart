@@ -42,6 +42,7 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
   }
 
   Future<void> _connect(String sessionId, Server server) async {
+    _writeInfo(sessionId, 'Connexion à ${server.host}:${server.port}…');
     final storage = ref.read(secureKeyStorageProvider);
     final settings = ref.read(settingsNotifierProvider).valueOrNull;
     final keyResult = await storage.loadKey(
@@ -58,12 +59,20 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
             .connect(server, key);
         if (!mounted) return;
         result.when(
-          ok: (conn) => _bindTerminal(sessionId, conn),
+          ok: (conn) {
+            _writeInfo(sessionId, 'Authentifié — ouverture du shell…');
+            _bindTerminal(sessionId, conn);
+          },
           err: (e) => _showError(e.toString()),
         );
       },
       err: (e) => _showError(e.toString()),
     );
+  }
+
+  void _writeInfo(String sessionId, String msg) {
+    final terminal = ref.read(terminalProvider(sessionId));
+    terminal.write('\x1b[33m$msg\x1b[0m\r\n');
   }
 
   Future<String?> _askPassphrase() async {
@@ -293,6 +302,7 @@ class _TerminalView extends ConsumerWidget {
     final terminal = ref.watch(terminalProvider(sessionId));
     return TerminalView(
       terminal,
+      autofocus: true,
       theme: const TerminalTheme(
         cursor: Color(0xFF00FF41),
         selection: Color(0x5000FF41),
