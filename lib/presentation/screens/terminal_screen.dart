@@ -111,10 +111,13 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
 
   void _showError(String msg) {
     if (!mounted) return;
+    final terminal = ref.read(terminalProvider(_activeSessionId));
+    terminal.write('\r\n\x1b[31m[ERREUR] $msg\x1b[0m\r\n');
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(msg),
         backgroundColor: Colors.red[900],
+        duration: const Duration(seconds: 8),
       ),
     );
   }
