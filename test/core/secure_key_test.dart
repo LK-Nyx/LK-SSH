@@ -9,10 +9,17 @@ void main() {
       expect(key.bytes, [1, 2, 3]);
     });
 
-    test('zeroise efface les bytes', () {
+    test('bytes retourne une copie (pas de référence directe)', () {
+      final key = SecureKey.fromBytes(Uint8List.fromList([1, 2, 3]));
+      final copy = key.bytes;
+      copy[0] = 99;
+      expect(key.bytes[0], 1);
+    });
+
+    test('bytes jette StateError après zeroise', () {
       final key = SecureKey.fromBytes(Uint8List.fromList([1, 2, 3]));
       key.zeroise();
-      expect(key.bytes, [0, 0, 0]);
+      expect(() => key.bytes, throwsStateError);
     });
 
     test('isDisposed est true après zeroise', () {

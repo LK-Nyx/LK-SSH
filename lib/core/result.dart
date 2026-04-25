@@ -4,8 +4,15 @@ sealed class Result<T, E> {
   bool get isOk => this is Ok<T, E>;
   bool get isErr => this is Err<T, E>;
 
-  T get value => (this as Ok<T, E>).value;
-  E get error => (this as Err<T, E>).error;
+  T get value {
+    if (this case Ok<T, E>(value: final v)) return v;
+    throw StateError('Result.value called on Err — use when() instead');
+  }
+
+  E get error {
+    if (this case Err<T, E>(error: final e)) return e;
+    throw StateError('Result.error called on Ok — use when() instead');
+  }
 
   R when<R>({
     required R Function(T value) ok,
