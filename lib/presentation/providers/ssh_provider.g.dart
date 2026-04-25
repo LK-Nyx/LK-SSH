@@ -6,7 +6,7 @@ part of 'ssh_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$sshNotifierHash() => r'7ad00cab4e14a2ea92e3add508cd610bcaabb11d';
+String _$sshNotifierHash() => r'dc88938ad6b7db8f929f2f6f1f4bca224896728e';
 
 /// Copied from Dart SDK
 class _SystemHash {

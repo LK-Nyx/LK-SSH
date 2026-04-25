@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:dartssh2/dartssh2.dart';
@@ -15,18 +16,22 @@ abstract interface class SshClientFactory {
 }
 
 final class DefaultSshClientFactory implements SshClientFactory {
+  static const _connectTimeout = Duration(seconds: 15);
+  static const _authTimeout = Duration(seconds: 20);
+
   @override
   Future<SSHClient> connect({
     required Server server,
     required Uint8List keyBytes,
   }) async {
-    final socket = await SSHSocket.connect(server.host, server.port);
+    final socket = await SSHSocket.connect(server.host, server.port)
+        .timeout(_connectTimeout);
     final client = SSHClient(
       socket,
       username: server.username,
       identities: SSHKeyPair.fromPem(String.fromCharCodes(keyBytes)),
     );
-    await client.authenticated;
+    await client.authenticated.timeout(_authTimeout);
     return client;
   }
 }
@@ -71,6 +76,8 @@ final class SSHService {
       return Ok(SshConnection(client: client, server: server));
     } on SSHAuthFailError catch (e) {
       return Err(SshAuthError(e.toString()));
+    } on TimeoutException {
+      return const Err(SshConnectionError('Délai dépassé — serveur injoignable ou authentification trop lente.'));
     } catch (e) {
       return Err(SshConnectionError(e.toString()));
     }

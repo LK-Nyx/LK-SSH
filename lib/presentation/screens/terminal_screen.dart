@@ -41,10 +41,26 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
     );
   }
 
+  bool get _verbose =>
+      ref.read(settingsNotifierProvider).valueOrNull?.verboseLogging ?? false;
+
+  void _log(String sessionId, String msg, {bool verboseOnly = false}) {
+    if (verboseOnly && !_verbose) return;
+    final terminal = ref.read(terminalProvider(sessionId));
+    terminal.write('\x1b[33m[lk-ssh] $msg\x1b[0m\r\n');
+  }
+
+  void _logOk(String sessionId, String msg) {
+    final terminal = ref.read(terminalProvider(sessionId));
+    terminal.write('\x1b[32m[ok] $msg\x1b[0m\r\n');
+  }
+
   Future<void> _connect(String sessionId, Server server) async {
-    _writeInfo(sessionId, 'Connexion à ${server.host}:${server.port}…');
+    _log(sessionId, 'Connexion à ${server.host}:${server.port} (${server.username})…');
     final storage = ref.read(secureKeyStorageProvider);
     final settings = ref.read(settingsNotifierProvider).valueOrNull;
+
+    _log(sessionId, 'Chargement de la clé SSH…', verboseOnly: true);
     final keyResult = await storage.loadKey(
       passphrase:
           settings?.keyStorageMode == KeyStorageMode.passphraseProtected
@@ -52,27 +68,25 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
               : null,
     );
     if (!mounted) return;
+
     keyResult.when(
       ok: (key) async {
+        _log(sessionId, 'Clé chargée — handshake SSH…', verboseOnly: true);
         final result = await ref
             .read(sshNotifierProvider(sessionId).notifier)
             .connect(server, key);
         if (!mounted) return;
         result.when(
           ok: (conn) {
-            _writeInfo(sessionId, 'Authentifié — ouverture du shell…');
+            _log(sessionId, 'Authentifié par clé publique', verboseOnly: true);
+            _log(sessionId, 'Ouverture du shell PTY (120×40)…', verboseOnly: true);
             _bindTerminal(sessionId, conn);
           },
-          err: (e) => _showError(e.toString()),
+          err: (e) => _showError(e.message),
         );
       },
-      err: (e) => _showError(e.toString()),
+      err: (e) => _showError(e.message),
     );
-  }
-
-  void _writeInfo(String sessionId, String msg) {
-    final terminal = ref.read(terminalProvider(sessionId));
-    terminal.write('\x1b[33m$msg\x1b[0m\r\n');
   }
 
   Future<String?> _askPassphrase() async {
@@ -105,6 +119,7 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
     if (!mounted) return;
     shellResult.when(
       ok: (shell) {
+        _logOk(sessionId, 'Shell prêt — ${conn.server.host}');
         shell.stdout.listen(
           (data) => terminal.write(String.fromCharCodes(data)),
         );
@@ -113,6 +128,9 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
         );
         terminal.onOutput = (data) =>
             shell.write(Uint8List.fromList(data.codeUnits));
+        shell.done.then((_) {
+          if (mounted) _showError('Session terminée par le serveur');
+        });
       },
       err: (e) => _showError(e.toString()),
     );

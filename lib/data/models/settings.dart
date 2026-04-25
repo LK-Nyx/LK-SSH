@@ -13,6 +13,7 @@ class Settings with _$Settings {
     @Default(KeyStorageMode.secureStorage) KeyStorageMode keyStorageMode,
     @Default(5) int sessionTimeoutMinutes,
     @Default(AppTheme.dark) AppTheme theme,
+    @Default(false) bool verboseLogging,
   }) = _Settings;
 
   factory Settings.fromJson(Map<String, dynamic> json) =>

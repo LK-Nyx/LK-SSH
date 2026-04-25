@@ -225,6 +225,19 @@ class _SettingsBodyState extends ConsumerState<_SettingsBody> {
                 .save(widget.settings.copyWith(sessionTimeoutMinutes: v!)),
           ),
         ),
+        const Divider(),
+        const _SectionHeader('Débogage'),
+        SwitchListTile(
+          title: const Text('Mode verbose'),
+          subtitle: const Text(
+            'Affiche les étapes de connexion SSH dans le terminal',
+          ),
+          value: widget.settings.verboseLogging,
+          activeColor: const Color(0xFF00FF41),
+          onChanged: (v) => ref
+              .read(settingsNotifierProvider.notifier)
+              .save(widget.settings.copyWith(verboseLogging: v)),
+        ),
       ],
     );
   }

@@ -23,6 +23,7 @@ mixin _$Settings {
   KeyStorageMode get keyStorageMode => throw _privateConstructorUsedError;
   int get sessionTimeoutMinutes => throw _privateConstructorUsedError;
   AppTheme get theme => throw _privateConstructorUsedError;
+  bool get verboseLogging => throw _privateConstructorUsedError;
 
   /// Serializes this Settings to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -42,7 +43,8 @@ abstract class $SettingsCopyWith<$Res> {
   $Res call(
       {KeyStorageMode keyStorageMode,
       int sessionTimeoutMinutes,
-      AppTheme theme});
+      AppTheme theme,
+      bool verboseLogging});
 }
 
 /// @nodoc
@@ -63,6 +65,7 @@ class _$SettingsCopyWithImpl<$Res, $Val extends Settings>
     Object? keyStorageMode = null,
     Object? sessionTimeoutMinutes = null,
     Object? theme = null,
+    Object? verboseLogging = null,
   }) {
     return _then(_value.copyWith(
       keyStorageMode: null == keyStorageMode
@@ -77,6 +80,10 @@ class _$SettingsCopyWithImpl<$Res, $Val extends Settings>
           ? _value.theme
           : theme // ignore: cast_nullable_to_non_nullable
               as AppTheme,
+      verboseLogging: null == verboseLogging
+          ? _value.verboseLogging
+          : verboseLogging // ignore: cast_nullable_to_non_nullable
+              as bool,
     ) as $Val);
   }
 }
@@ -92,7 +99,8 @@ abstract class _$$SettingsImplCopyWith<$Res>
   $Res call(
       {KeyStorageMode keyStorageMode,
       int sessionTimeoutMinutes,
-      AppTheme theme});
+      AppTheme theme,
+      bool verboseLogging});
 }
 
 /// @nodoc
@@ -111,6 +119,7 @@ class __$$SettingsImplCopyWithImpl<$Res>
     Object? keyStorageMode = null,
     Object? sessionTimeoutMinutes = null,
     Object? theme = null,
+    Object? verboseLogging = null,
   }) {
     return _then(_$SettingsImpl(
       keyStorageMode: null == keyStorageMode
@@ -125,6 +134,10 @@ class __$$SettingsImplCopyWithImpl<$Res>
           ? _value.theme
           : theme // ignore: cast_nullable_to_non_nullable
               as AppTheme,
+      verboseLogging: null == verboseLogging
+          ? _value.verboseLogging
+          : verboseLogging // ignore: cast_nullable_to_non_nullable
+              as bool,
     ));
   }
 }
@@ -135,7 +148,8 @@ class _$SettingsImpl implements _Settings {
   const _$SettingsImpl(
       {this.keyStorageMode = KeyStorageMode.secureStorage,
       this.sessionTimeoutMinutes = 5,
-      this.theme = AppTheme.dark});
+      this.theme = AppTheme.dark,
+      this.verboseLogging = false});
 
   factory _$SettingsImpl.fromJson(Map<String, dynamic> json) =>
       _$$SettingsImplFromJson(json);
@@ -149,10 +163,13 @@ class _$SettingsImpl implements _Settings {
   @override
   @JsonKey()
   final AppTheme theme;
+  @override
+  @JsonKey()
+  final bool verboseLogging;
 
   @override
   String toString() {
-    return 'Settings(keyStorageMode: $keyStorageMode, sessionTimeoutMinutes: $sessionTimeoutMinutes, theme: $theme)';
+    return 'Settings(keyStorageMode: $keyStorageMode, sessionTimeoutMinutes: $sessionTimeoutMinutes, theme: $theme, verboseLogging: $verboseLogging)';
   }
 
   @override
@@ -164,13 +181,15 @@ class _$SettingsImpl implements _Settings {
                 other.keyStorageMode == keyStorageMode) &&
             (identical(other.sessionTimeoutMinutes, sessionTimeoutMinutes) ||
                 other.sessionTimeoutMinutes == sessionTimeoutMinutes) &&
-            (identical(other.theme, theme) || other.theme == theme));
+            (identical(other.theme, theme) || other.theme == theme) &&
+            (identical(other.verboseLogging, verboseLogging) ||
+                other.verboseLogging == verboseLogging));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, keyStorageMode, sessionTimeoutMinutes, theme);
+  int get hashCode => Object.hash(runtimeType, keyStorageMode,
+      sessionTimeoutMinutes, theme, verboseLogging);
 
   /// Create a copy of Settings
   /// with the given fields replaced by the non-null parameter values.
@@ -192,7 +211,8 @@ abstract class _Settings implements Settings {
   const factory _Settings(
       {final KeyStorageMode keyStorageMode,
       final int sessionTimeoutMinutes,
-      final AppTheme theme}) = _$SettingsImpl;
+      final AppTheme theme,
+      final bool verboseLogging}) = _$SettingsImpl;
 
   factory _Settings.fromJson(Map<String, dynamic> json) =
       _$SettingsImpl.fromJson;
@@ -203,6 +223,8 @@ abstract class _Settings implements Settings {
   int get sessionTimeoutMinutes;
   @override
   AppTheme get theme;
+  @override
+  bool get verboseLogging;
 
   /// Create a copy of Settings
   /// with the given fields replaced by the non-null parameter values.

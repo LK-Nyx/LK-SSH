@@ -15,6 +15,7 @@ _$SettingsImpl _$$SettingsImplFromJson(Map<String, dynamic> json) =>
           (json['sessionTimeoutMinutes'] as num?)?.toInt() ?? 5,
       theme: $enumDecodeNullable(_$AppThemeEnumMap, json['theme']) ??
           AppTheme.dark,
+      verboseLogging: json['verboseLogging'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$$SettingsImplToJson(_$SettingsImpl instance) =>
@@ -22,6 +23,7 @@ Map<String, dynamic> _$$SettingsImplToJson(_$SettingsImpl instance) =>
       'keyStorageMode': _$KeyStorageModeEnumMap[instance.keyStorageMode]!,
       'sessionTimeoutMinutes': instance.sessionTimeoutMinutes,
       'theme': _$AppThemeEnumMap[instance.theme]!,
+      'verboseLogging': instance.verboseLogging,
     };
 
 const _$KeyStorageModeEnumMap = {
