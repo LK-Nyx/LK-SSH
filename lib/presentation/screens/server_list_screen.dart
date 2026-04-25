@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/models/server.dart';
 import '../providers/servers_provider.dart';
 import '../providers/sessions_provider.dart';
 import 'server_form_screen.dart';
