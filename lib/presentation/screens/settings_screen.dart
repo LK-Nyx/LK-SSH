@@ -50,17 +50,9 @@ class _SettingsBodyState extends ConsumerState<_SettingsBody> {
     if (mounted) setState(() => _keyLoaded = has);
   }
 
-  Future<void> _importKey(String? passphrase) async {
-    final result = await FilePicker.platform.pickFiles(type: FileType.any);
-    if (result == null || result.files.single.path == null) return;
-
-    final bytes = await result.files.single.xFile.readAsBytes();
+  Future<void> _storeKeyBytes(Uint8List bytes, String? passphrase) async {
     final storage = ref.read(secureKeyStorageProvider);
-    final storeResult = await storage.storeKey(
-      Uint8List.fromList(bytes),
-      passphrase: passphrase,
-    );
-
+    final storeResult = await storage.storeKey(bytes, passphrase: passphrase);
     if (!mounted) return;
     storeResult.when(
       ok: (_) => setState(() {
@@ -71,15 +63,63 @@ class _SettingsBodyState extends ConsumerState<_SettingsBody> {
     );
   }
 
-  void _onImportPressed() {
+  Future<void> _importKeyFromFile(String? passphrase) async {
+    final result = await FilePicker.platform.pickFiles(type: FileType.any);
+    if (result == null || result.files.single.path == null) return;
+    final bytes = await result.files.single.xFile.readAsBytes();
+    await _storeKeyBytes(Uint8List.fromList(bytes), passphrase);
+  }
+
+  Future<void> _importKeyFromPem(String? passphrase) async {
+    final ctrl = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        title: const Text('Coller la clé PEM'),
+        content: TextField(
+          controller: ctrl,
+          maxLines: 8,
+          style: const TextStyle(fontFamily: 'monospace', fontSize: 11),
+          decoration: const InputDecoration(
+            hintText: '-----BEGIN OPENSSH PRIVATE KEY-----\n...',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Annuler'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Importer'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    final bytes = Uint8List.fromList(ctrl.text.trim().codeUnits);
+    await _storeKeyBytes(bytes, passphrase);
+  }
+
+  void _onImportFilePressed() {
     if (widget.settings.keyStorageMode == KeyStorageMode.passphraseProtected) {
-      _showPassphraseDialog();
+      _showPassphraseDialog(onConfirm: _importKeyFromFile);
     } else {
-      _importKey(null);
+      _importKeyFromFile(null);
     }
   }
 
-  void _showPassphraseDialog() {
+  void _onPastePressed() {
+    if (widget.settings.keyStorageMode == KeyStorageMode.passphraseProtected) {
+      _showPassphraseDialog(onConfirm: _importKeyFromPem);
+    } else {
+      _importKeyFromPem(null);
+    }
+  }
+
+  void _showPassphraseDialog({required void Function(String?) onConfirm}) {
     final ctrl = TextEditingController();
     showDialog<void>(
       context: context,
@@ -98,7 +138,7 @@ class _SettingsBodyState extends ConsumerState<_SettingsBody> {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              _importKey(ctrl.text);
+              onConfirm(ctrl.text);
             },
             child: const Text('OK'),
           ),
@@ -130,19 +170,45 @@ class _SettingsBodyState extends ConsumerState<_SettingsBody> {
         ),
         const Divider(),
         const _SectionHeader('Clé privée ed25519'),
-        ListTile(
-          title: const Text('Importer via fichier'),
-          subtitle: _keyError != null
-              ? Text(_keyError!, style: const TextStyle(color: Colors.red))
-              : _keyLoaded
-                  ? const Text(
-                      '✓ ed25519 chargée',
-                      style: TextStyle(color: Color(0xFF00FF41)),
-                    )
-                  : const Text('Aucune clé chargée'),
-          trailing: ElevatedButton(
-            onPressed: _onImportPressed,
-            child: const Text('Importer'),
+        if (_keyError != null)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: Text(_keyError!, style: const TextStyle(color: Colors.red)),
+          )
+        else if (_keyLoaded)
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: Text(
+              '✓ ed25519 chargée',
+              style: TextStyle(color: Color(0xFF00FF41)),
+            ),
+          )
+        else
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: Text('Aucune clé chargée',
+                style: TextStyle(color: Colors.grey)),
+          ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _onImportFilePressed,
+                  icon: const Icon(Icons.folder_open, size: 16),
+                  label: const Text('Fichier'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _onPastePressed,
+                  icon: const Icon(Icons.content_paste, size: 16),
+                  label: const Text('Coller PEM'),
+                ),
+              ),
+            ],
           ),
         ),
         const Divider(),
