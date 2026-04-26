@@ -46,4 +46,5 @@ const _$ToolbarButtonTypeEnumMap = {
   ToolbarButtonType.f11: 'f11',
   ToolbarButtonType.f12: 'f12',
   ToolbarButtonType.password: 'password',
+  ToolbarButtonType.paste: 'paste',
 };

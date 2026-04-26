@@ -158,6 +158,7 @@ class _KeyboardToolbarState extends ConsumerState<KeyboardToolbar> {
     ToolbarButtonType.f11        => 'F11',
     ToolbarButtonType.f12        => 'F12',
     ToolbarButtonType.password   => '🔑',
+    ToolbarButtonType.paste      => '⎘',
   };
 
   Widget _buildButton({
