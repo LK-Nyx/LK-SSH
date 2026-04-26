@@ -97,6 +97,7 @@ class _KeyboardToolbarState extends ConsumerState<KeyboardToolbar> {
     if (available.isEmpty) return;
     showModalBottomSheet<void>(
       context: context,
+      useSafeArea: true,
       builder: (_) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
