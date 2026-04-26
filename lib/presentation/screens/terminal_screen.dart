@@ -198,6 +198,10 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
       ),
     );
 
+    final toolbarEditMode = ref.watch(
+      keyboardToolbarProvider(_activeSessionId).select((s) => s.editMode),
+    );
+
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -212,7 +216,13 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
             Expanded(
               child: _TerminalView(sessionId: _activeSessionId),
             ),
-            KeyboardToolbar(sessionId: _activeSessionId),
+            TapRegion(
+              enabled: toolbarEditMode,
+              onTapOutside: (_) => ref
+                  .read(keyboardToolbarProvider(_activeSessionId).notifier)
+                  .toggleEditMode(),
+              child: KeyboardToolbar(sessionId: _activeSessionId),
+            ),
             SnippetPanel(
               sessionId: _activeSessionId,
               serverId: activeSession.serverId,

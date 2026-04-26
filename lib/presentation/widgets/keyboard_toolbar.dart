@@ -24,6 +24,7 @@ class KeyboardToolbar extends ConsumerStatefulWidget {
 class _KeyboardToolbarState extends ConsumerState<KeyboardToolbar> {
   String? _password;
   final _pwStorage = ToolbarPasswordStorage();
+  List<ToolbarButton>? _localButtons;
 
   @override
   void initState() {
@@ -34,6 +35,7 @@ class _KeyboardToolbarState extends ConsumerState<KeyboardToolbar> {
   }
 
   List<ToolbarButton> _buttons(Settings? settings) {
+    if (_localButtons != null) return _localButtons!;
     final list = settings?.toolbarButtons ?? [];
     return list.isEmpty ? defaultToolbarButtons() : list;
   }
@@ -73,6 +75,7 @@ class _KeyboardToolbarState extends ConsumerState<KeyboardToolbar> {
 
   void _onDelete(int index, List<ToolbarButton> buttons, Settings settings) {
     final updated = [...buttons]..removeAt(index);
+    setState(() => _localButtons = updated);
     ref.read(settingsNotifierProvider.notifier)
         .save(settings.copyWith(toolbarButtons: updated));
   }
@@ -81,6 +84,7 @@ class _KeyboardToolbarState extends ConsumerState<KeyboardToolbar> {
     final updated = [...buttons];
     if (newIndex > oldIndex) newIndex--;
     updated.insert(newIndex, updated.removeAt(oldIndex));
+    setState(() => _localButtons = updated);
     ref.read(settingsNotifierProvider.notifier)
         .save(settings.copyWith(toolbarButtons: updated));
   }
@@ -198,12 +202,21 @@ class _KeyboardToolbarState extends ConsumerState<KeyboardToolbar> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(
+      settingsNotifierProvider.select((s) => s.valueOrNull?.toolbarButtons),
+      (_, __) { if (_localButtons != null) setState(() => _localButtons = null); },
+    );
+
     final settings = ref.watch(settingsNotifierProvider).valueOrNull;
     final toolbarState = ref.watch(keyboardToolbarProvider(widget.sessionId));
     final buttons = _buttons(settings);
     final editMode = toolbarState.editMode;
     final activeMod = toolbarState.activeMod;
     final fixedNav = settings?.fixedNavSection ?? false;
+
+    final currentTypes = buttons.map((b) => b.type).toSet();
+    final hasAvailableButtons = defaultToolbarButtons()
+        .any((b) => !currentTypes.contains(b.type));
 
     const navTypes = {
       ToolbarButtonType.arrowUp, ToolbarButtonType.arrowDown,
@@ -266,7 +279,7 @@ class _KeyboardToolbarState extends ConsumerState<KeyboardToolbar> {
             : Row(
                 children: [
                   Expanded(child: scrollable),
-                  if (editMode)
+                  if (editMode && hasAvailableButtons)
                     IconButton(
                       padding: EdgeInsets.zero,
                       icon: const Icon(Icons.add, size: 16, color: Color(0xFF00FF41)),
