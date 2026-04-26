@@ -35,6 +35,13 @@ class TerminalScreen extends ConsumerStatefulWidget {
 
 class _TerminalScreenState extends ConsumerState<TerminalScreen> {
   late String _activeSessionId;
+  Timer? _ptyDebounce;
+
+  @override
+  void dispose() {
+    _ptyDebounce?.cancel();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -142,7 +149,10 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
           shell.write(bytes);
         };
         terminal.onResize = (cols, rows, pixelWidth, pixelHeight) {
-          shell.resizeTerminal(cols, rows);
+          _ptyDebounce?.cancel();
+          _ptyDebounce = Timer(const Duration(milliseconds: 150), () {
+            shell.resizeTerminal(cols, rows);
+          });
         };
         shell.done.then((_) {
           if (mounted) _showError('Session terminée par le serveur');
@@ -347,11 +357,15 @@ class _TerminalView extends ConsumerStatefulWidget {
 }
 
 class _TerminalViewState extends ConsumerState<_TerminalView> {
-  double _baseSize = 14.0;
   double _pendingSize = 14.0;
   Timer? _debounce;
   final _controller = TerminalController(selectionMode: SelectionMode.line);
   final _contextMenuController = ContextMenuController();
+
+  // Pinch zoom — Listener ne participe pas à l'arène de gestes
+  final _pointers = <int, Offset>{};
+  double? _pinchStartDistance;
+  double _pinchStartSize = 14.0;
 
   @override
   void initState() {
@@ -361,8 +375,8 @@ class _TerminalViewState extends ConsumerState<_TerminalView> {
             .valueOrNull
             ?.terminalFontSize ??
         14.0;
-    _baseSize = fontSize;
     _pendingSize = fontSize;
+    _pinchStartSize = fontSize;
   }
 
   @override
@@ -370,6 +384,48 @@ class _TerminalViewState extends ConsumerState<_TerminalView> {
     _debounce?.cancel();
     _contextMenuController.remove();
     super.dispose();
+  }
+
+  void _onPointerDown(PointerDownEvent event) {
+    _pointers[event.pointer] = event.localPosition;
+    if (_pointers.length == 2) {
+      final positions = _pointers.values.toList();
+      _pinchStartDistance = (positions[0] - positions[1]).distance;
+      _pinchStartSize = _pendingSize;
+    }
+  }
+
+  void _onPointerMove(PointerMoveEvent event) {
+    if (!_pointers.containsKey(event.pointer)) return;
+    _pointers[event.pointer] = event.localPosition;
+    if (_pointers.length < 2 ||
+        _pinchStartDistance == null ||
+        _pinchStartDistance! < 1.0) {
+      return;
+    }
+    final positions = _pointers.values.toList();
+    final dist = (positions[0] - positions[1]).distance;
+    final next = (_pinchStartSize * (dist / _pinchStartDistance!)).clamp(8.0, 28.0);
+    if ((next - _pendingSize).abs() < 0.3) return;
+    setState(() => _pendingSize = next);
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 300), () {
+      _debounce = null;
+      final s = ref.read(settingsNotifierProvider).valueOrNull;
+      if (s == null || !mounted) return;
+      ref.read(settingsNotifierProvider.notifier)
+          .save(s.copyWith(terminalFontSize: _pendingSize));
+    });
+  }
+
+  void _onPointerUp(PointerUpEvent event) {
+    _pointers.remove(event.pointer);
+    if (_pointers.length < 2) _pinchStartDistance = null;
+  }
+
+  void _onPointerCancel(PointerCancelEvent event) {
+    _pointers.remove(event.pointer);
+    if (_pointers.length < 2) _pinchStartDistance = null;
   }
 
   void _showContextMenu({
@@ -419,35 +475,20 @@ class _TerminalViewState extends ConsumerState<_TerminalView> {
       settingsNotifierProvider
           .select((s) => s.valueOrNull?.terminalFontSize ?? 14.0),
       (prev, next) {
-        if (_debounce == null) setState(() => _pendingSize = next);
+        if (_debounce == null && _pinchStartDistance == null) {
+          setState(() => _pendingSize = next);
+        }
       },
     );
 
     final terminal = ref.watch(terminalProvider(widget.sessionId));
 
-    return GestureDetector(
-      onScaleStart: (d) {
-        _baseSize = ref
-                .read(settingsNotifierProvider)
-                .valueOrNull
-                ?.terminalFontSize ??
-            _pendingSize;
-        _pendingSize = _baseSize;
-      },
-      onScaleUpdate: (d) {
-        final next = (_baseSize * d.scale).clamp(8.0, 28.0);
-        setState(() => _pendingSize = next);
-        _debounce?.cancel();
-        _debounce = Timer(const Duration(milliseconds: 300), () {
-          _debounce = null;
-          final s =
-              ref.read(settingsNotifierProvider).valueOrNull;
-          if (s == null || !mounted) return;
-          ref
-              .read(settingsNotifierProvider.notifier)
-              .save(s.copyWith(terminalFontSize: _pendingSize));
-        });
-      },
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: _onPointerDown,
+      onPointerMove: _onPointerMove,
+      onPointerUp: _onPointerUp,
+      onPointerCancel: _onPointerCancel,
       child: TerminalView(
         terminal,
         controller: _controller,
