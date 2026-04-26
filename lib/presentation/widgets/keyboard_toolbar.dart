@@ -1,8 +1,8 @@
 // lib/presentation/widgets/keyboard_toolbar.dart
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models/settings.dart';
@@ -52,7 +52,7 @@ class _KeyboardToolbarState extends ConsumerState<KeyboardToolbar> {
     _ => null,
   };
 
-  void _onTap(ToolbarButtonType type) {
+  Future<void> _onTap(ToolbarButtonType type) async {
     final notifier = ref.read(keyboardToolbarProvider(widget.sessionId).notifier);
     final mod = _modFor(type);
     if (mod != null) { notifier.toggleMod(mod); return; }
@@ -61,6 +61,16 @@ class _KeyboardToolbarState extends ConsumerState<KeyboardToolbar> {
       if (pw != null && pw.isNotEmpty) {
         ref.read(sshNotifierProvider(widget.sessionId)).whenData(
           (conn) => conn?.sendRaw(Uint8List.fromList(utf8.encode('$pw\n'))),
+        );
+      }
+      return;
+    }
+    if (type == ToolbarButtonType.paste) {
+      final clip = await Clipboard.getData(Clipboard.kTextPlain);
+      final text = clip?.text;
+      if (text != null && text.isNotEmpty) {
+        ref.read(sshNotifierProvider(widget.sessionId)).whenData(
+          (conn) => conn?.sendRaw(Uint8List.fromList(utf8.encode(text))),
         );
       }
       return;
