@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:xterm/xterm.dart';
 
@@ -350,6 +350,8 @@ class _TerminalViewState extends ConsumerState<_TerminalView> {
   double _baseSize = 14.0;
   double _pendingSize = 14.0;
   Timer? _debounce;
+  final _controller = TerminalController(selectionMode: SelectionMode.line);
+  final _contextMenuController = ContextMenuController();
 
   @override
   void initState() {
@@ -366,7 +368,49 @@ class _TerminalViewState extends ConsumerState<_TerminalView> {
   @override
   void dispose() {
     _debounce?.cancel();
+    _contextMenuController.remove();
     super.dispose();
+  }
+
+  void _showContextMenu({
+    required Offset position,
+    String? selectedText,
+    String? clipText,
+  }) {
+    final conn = ref.read(sshNotifierProvider(widget.sessionId)).valueOrNull;
+    final items = [
+      if (selectedText != null)
+        ContextMenuButtonItem(
+          label: 'Copier',
+          onPressed: () {
+            Clipboard.setData(ClipboardData(text: selectedText));
+            _controller.clearSelection();
+            _contextMenuController.remove();
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Copié'),
+                duration: Duration(seconds: 1),
+              ),
+            );
+          },
+        ),
+      if (clipText != null && clipText.isNotEmpty)
+        ContextMenuButtonItem(
+          label: 'Coller',
+          onPressed: () {
+            conn?.sendRaw(Uint8List.fromList(utf8.encode(clipText)));
+            _contextMenuController.remove();
+          },
+        ),
+    ];
+    if (items.isEmpty) return;
+    _contextMenuController.show(
+      context: context,
+      contextMenuBuilder: (_) => AdaptiveTextSelectionToolbar.buttonItems(
+        anchors: TextSelectionToolbarAnchors(primaryAnchor: position),
+        buttonItems: items,
+      ),
+    );
   }
 
   @override
@@ -406,8 +450,22 @@ class _TerminalViewState extends ConsumerState<_TerminalView> {
       },
       child: TerminalView(
         terminal,
+        controller: _controller,
         autofocus: true,
         textStyle: TerminalStyle(fontSize: _pendingSize),
+        onSecondaryTapDown: (details, offset) async {
+          _contextMenuController.remove();
+          final selection = _controller.selection;
+          final selectedText = selection != null
+              ? terminal.buffer.getText(selection).trim()
+              : null;
+          final clip = await Clipboard.getData(Clipboard.kTextPlain);
+          _showContextMenu(
+            position: details.globalPosition,
+            selectedText: (selectedText?.isEmpty ?? true) ? null : selectedText,
+            clipText: clip?.text,
+          );
+        },
         theme: const TerminalTheme(
           cursor: Color(0xFF00FF41),
           selection: Color(0x5000FF41),
