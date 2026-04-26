@@ -140,6 +140,9 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
           }
           shell.write(bytes);
         };
+        terminal.onResize = (cols, rows, pixelWidth, pixelHeight) {
+          shell.resizeTerminal(cols, rows);
+        };
         shell.done.then((_) {
           if (mounted) _showError('Session terminée par le serveur');
         });
