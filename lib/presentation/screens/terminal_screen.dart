@@ -150,7 +150,7 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
         };
         terminal.onResize = (cols, rows, pixelWidth, pixelHeight) {
           _ptyDebounce?.cancel();
-          _ptyDebounce = Timer(const Duration(milliseconds: 150), () {
+          _ptyDebounce = Timer(const Duration(milliseconds: 50), () {
             shell.resizeTerminal(cols, rows);
           });
         };

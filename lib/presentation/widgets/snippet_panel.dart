@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -61,16 +59,9 @@ class _SnippetPanelState extends ConsumerState<SnippetPanel> {
 
     if (!mounted) return;
     final sshAsync = ref.read(sshNotifierProvider(widget.sessionId));
-    sshAsync.whenData((conn) async {
+    sshAsync.whenData((conn) {
       if (conn == null) return;
-      final shellResult = await conn.openShell();
-      shellResult.when(
-        ok: (shell) {
-          shell.write(Uint8List.fromList('$command\n'.codeUnits));
-          shell.close();
-        },
-        err: (_) {},
-      );
+      conn.sendCommand(command);
     });
   }
 
