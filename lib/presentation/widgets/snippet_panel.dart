@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models/snippet.dart';
+import '../../data/storage/debug_log_service.dart';
 import '../../domain/services/snippet_service.dart';
 import '../providers/snippets_provider.dart';
 import '../providers/ssh_provider.dart';
@@ -58,8 +59,11 @@ class _SnippetPanelState extends ConsumerState<SnippetPanel> {
     }
 
     if (!mounted) return;
+    final log = DebugLogService.instance;
     final sshAsync = ref.read(sshNotifierProvider(widget.sessionId));
+    log.log('SNIPPET', 'sessionId=${widget.sessionId} command="$command" sshState=${sshAsync.runtimeType}');
     sshAsync.whenData((conn) {
+      log.log('SNIPPET', 'conn=${conn == null ? "NULL ← PROBLÈME" : "OK"} → sendCommand');
       if (conn == null) return;
       conn.sendCommand(command);
     });

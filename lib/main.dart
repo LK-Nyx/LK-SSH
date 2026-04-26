@@ -1,9 +1,28 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
 
+import 'data/storage/debug_log_service.dart';
+import 'data/storage/json_storage_service.dart';
 import 'presentation/screens/server_list_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  // Réactiver le log fichier si activé à la session précédente
+  try {
+    final dir = await getApplicationDocumentsDirectory();
+    final dataDir = Directory('${dir.path}/lk_ssh_data');
+    final storage = JsonStorageService(dataDir);
+    final result = await storage.loadSettings();
+    result.when(
+      ok: (s) async {
+        if (s.fileDebugMode) await DebugLogService.instance.setEnabled(true);
+      },
+      err: (_) {},
+    );
+  } catch (_) {}
   runApp(const ProviderScope(child: LkSshApp()));
 }
 

@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/settings.dart';
 import '../../data/models/toolbar_button.dart';
 import '../../data/ssh/toolbar_password_storage.dart';
+import '../../data/storage/debug_log_service.dart';
 import '../../domain/services/ansi_service.dart';
 import '../providers/keyboard_toolbar_provider.dart';
 import '../providers/settings_provider.dart';
@@ -53,14 +54,21 @@ class _KeyboardToolbarState extends ConsumerState<KeyboardToolbar> {
   };
 
   Future<void> _onTap(ToolbarButtonType type) async {
+    final log = DebugLogService.instance;
     final notifier = ref.read(keyboardToolbarProvider(widget.sessionId).notifier);
     final mod = _modFor(type);
     if (mod != null) { notifier.toggleMod(mod); return; }
     if (type == ToolbarButtonType.password) {
       final pw = _password;
+      log.log('TOOLBAR', 'password tap — pw: ${pw == null ? "null" : pw.isEmpty ? "vide" : "défini (${pw.length} chars)"}');
       if (pw != null && pw.isNotEmpty) {
-        ref.read(sshNotifierProvider(widget.sessionId)).whenData(
-          (conn) => conn?.sendRaw(Uint8List.fromList(utf8.encode('$pw\n'))),
+        final sshAsync = ref.read(sshNotifierProvider(widget.sessionId));
+        log.log('TOOLBAR', 'password sshState=${sshAsync.runtimeType}');
+        sshAsync.whenData(
+          (conn) {
+            log.log('TOOLBAR', 'password conn=${conn == null ? "NULL" : "OK"} → sendRaw');
+            conn?.sendRaw(Uint8List.fromList(utf8.encode('$pw\n')));
+          },
         );
       }
       return;
@@ -76,9 +84,15 @@ class _KeyboardToolbarState extends ConsumerState<KeyboardToolbar> {
       return;
     }
     final bytes = AnsiService.sequenceFor(type);
+    log.log('TOOLBAR', 'type=$type bytes=${bytes.isNotEmpty ? bytes.toList() : "VIDE ← séquence manquante"}');
     if (bytes.isNotEmpty) {
-      ref.read(sshNotifierProvider(widget.sessionId)).whenData(
-        (conn) => conn?.sendRaw(bytes),
+      final sshAsync = ref.read(sshNotifierProvider(widget.sessionId));
+      log.log('TOOLBAR', 'sshState=${sshAsync.runtimeType}');
+      sshAsync.whenData(
+        (conn) {
+          log.log('TOOLBAR', 'conn=${conn == null ? "NULL" : "OK"} → sendRaw(${bytes.toList()})');
+          conn?.sendRaw(bytes);
+        },
       );
     }
   }

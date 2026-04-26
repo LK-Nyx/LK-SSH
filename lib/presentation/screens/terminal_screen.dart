@@ -13,6 +13,7 @@ import '../providers/sessions_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/ssh_provider.dart';
 import '../providers/terminal_provider.dart';
+import '../../data/storage/debug_log_service.dart';
 import '../../domain/services/ansi_service.dart';
 import '../../domain/services/ssh_service.dart';
 import '../providers/keyboard_toolbar_provider.dart' hide KeyboardToolbar;
@@ -149,8 +150,10 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
           shell.write(bytes);
         };
         terminal.onResize = (cols, rows, pixelWidth, pixelHeight) {
+          DebugLogService.instance.log('PTY', 'onResize: ${cols}x$rows (px: ${pixelWidth}x$pixelHeight)');
           _ptyDebounce?.cancel();
           _ptyDebounce = Timer(const Duration(milliseconds: 50), () {
+            DebugLogService.instance.log('PTY', 'resizeTerminal → ${cols}x$rows');
             shell.resizeTerminal(cols, rows);
           });
         };
@@ -158,7 +161,10 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
         // (autoResize tire pendant le premier layout, avant que openShell finisse).
         // On synchro la taille réelle après le prochain frame.
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) shell.resizeTerminal(terminal.viewWidth, terminal.viewHeight);
+          if (mounted) {
+            DebugLogService.instance.log('PTY', 'postFrameSync: viewWidth=${terminal.viewWidth} viewHeight=${terminal.viewHeight}');
+            shell.resizeTerminal(terminal.viewWidth, terminal.viewHeight);
+          }
         });
         shell.done.then((_) {
           if (mounted) _showError('Session terminée par le serveur');

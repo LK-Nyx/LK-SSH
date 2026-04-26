@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models/settings.dart';
 import '../../data/ssh/toolbar_password_storage.dart';
+import '../../data/storage/debug_log_service.dart';
 import '../providers/secure_key_provider.dart';
 import '../providers/settings_provider.dart';
 
@@ -253,6 +254,33 @@ class _SettingsBodyState extends ConsumerState<_SettingsBody> {
               .read(settingsNotifierProvider.notifier)
               .save(widget.settings.copyWith(verboseLogging: v)),
         ),
+        SwitchListTile(
+          title: const Text('Log fichier debug'),
+          subtitle: const Text(
+            'Écrit un journal détaillé dans un fichier sur le téléphone',
+          ),
+          value: widget.settings.fileDebugMode,
+          activeColor: const Color(0xFF00FF41),
+          onChanged: (v) async {
+            await DebugLogService.instance.setEnabled(v);
+            if (!mounted) return;
+            ref.read(settingsNotifierProvider.notifier).save(
+                  widget.settings.copyWith(fileDebugMode: v),
+                );
+          },
+        ),
+        if (widget.settings.fileDebugMode)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: SelectableText(
+              DebugLogService.instance.filePath,
+              style: const TextStyle(
+                fontFamily: 'monospace',
+                fontSize: 11,
+                color: Color(0xFF00FF41),
+              ),
+            ),
+          ),
         const Divider(),
         const _SectionHeader('Barre clavier'),
         Padding(

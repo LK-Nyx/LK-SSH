@@ -8,6 +8,7 @@ import '../../core/errors.dart';
 import '../../core/result.dart';
 import '../../core/secure_key.dart';
 import '../../data/models/server.dart';
+import '../../data/storage/debug_log_service.dart';
 
 abstract interface class SshClientFactory {
   Future<SSHClient> connect({
@@ -48,22 +49,30 @@ final class SshConnection {
     int width = 80,
     int height = 24,
   }) async {
+    final log = DebugLogService.instance;
+    log.log('SSH', 'openShell(width=$width, height=$height) — _activeShell avant: ${_activeShell == null ? "null" : "non-null"}');
     try {
       final shell = await client.shell(
         pty: SSHPtyConfig(width: width, height: height),
       );
       _activeShell = shell;
+      log.log('SSH', 'openShell OK — _activeShell défini');
       return Ok(shell);
     } catch (e) {
+      log.log('SSH', 'openShell ERREUR: $e');
       return Err(SshConnectionError(e.toString()));
     }
   }
 
   void sendCommand(String command) {
+    final log = DebugLogService.instance;
+    log.log('SSH', 'sendCommand("$command") — _activeShell: ${_activeShell == null ? "NULL ← PROBLÈME" : "OK"}');
     _activeShell?.write(Uint8List.fromList(utf8.encode('$command\n')));
   }
 
   void sendRaw(Uint8List bytes) {
+    final log = DebugLogService.instance;
+    log.log('SSH', 'sendRaw(${bytes.length} bytes: ${bytes.take(8).toList()}) — _activeShell: ${_activeShell == null ? "NULL ← PROBLÈME" : "OK"}');
     _activeShell?.write(bytes);
   }
 

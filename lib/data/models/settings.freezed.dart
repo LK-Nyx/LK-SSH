@@ -27,6 +27,7 @@ mixin _$Settings {
   List<ToolbarButton> get toolbarButtons => throw _privateConstructorUsedError;
   bool get fixedNavSection => throw _privateConstructorUsedError;
   double get terminalFontSize => throw _privateConstructorUsedError;
+  bool get fileDebugMode => throw _privateConstructorUsedError;
 
   /// Serializes this Settings to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -50,7 +51,8 @@ abstract class $SettingsCopyWith<$Res> {
       bool verboseLogging,
       List<ToolbarButton> toolbarButtons,
       bool fixedNavSection,
-      double terminalFontSize});
+      double terminalFontSize,
+      bool fileDebugMode});
 }
 
 /// @nodoc
@@ -75,6 +77,7 @@ class _$SettingsCopyWithImpl<$Res, $Val extends Settings>
     Object? toolbarButtons = null,
     Object? fixedNavSection = null,
     Object? terminalFontSize = null,
+    Object? fileDebugMode = null,
   }) {
     return _then(_value.copyWith(
       keyStorageMode: null == keyStorageMode
@@ -105,6 +108,10 @@ class _$SettingsCopyWithImpl<$Res, $Val extends Settings>
           ? _value.terminalFontSize
           : terminalFontSize // ignore: cast_nullable_to_non_nullable
               as double,
+      fileDebugMode: null == fileDebugMode
+          ? _value.fileDebugMode
+          : fileDebugMode // ignore: cast_nullable_to_non_nullable
+              as bool,
     ) as $Val);
   }
 }
@@ -124,7 +131,8 @@ abstract class _$$SettingsImplCopyWith<$Res>
       bool verboseLogging,
       List<ToolbarButton> toolbarButtons,
       bool fixedNavSection,
-      double terminalFontSize});
+      double terminalFontSize,
+      bool fileDebugMode});
 }
 
 /// @nodoc
@@ -147,6 +155,7 @@ class __$$SettingsImplCopyWithImpl<$Res>
     Object? toolbarButtons = null,
     Object? fixedNavSection = null,
     Object? terminalFontSize = null,
+    Object? fileDebugMode = null,
   }) {
     return _then(_$SettingsImpl(
       keyStorageMode: null == keyStorageMode
@@ -177,6 +186,10 @@ class __$$SettingsImplCopyWithImpl<$Res>
           ? _value.terminalFontSize
           : terminalFontSize // ignore: cast_nullable_to_non_nullable
               as double,
+      fileDebugMode: null == fileDebugMode
+          ? _value.fileDebugMode
+          : fileDebugMode // ignore: cast_nullable_to_non_nullable
+              as bool,
     ));
   }
 }
@@ -191,7 +204,8 @@ class _$SettingsImpl implements _Settings {
       this.verboseLogging = false,
       final List<ToolbarButton> toolbarButtons = const [],
       this.fixedNavSection = false,
-      this.terminalFontSize = 14.0})
+      this.terminalFontSize = 14.0,
+      this.fileDebugMode = false})
       : _toolbarButtons = toolbarButtons;
 
   factory _$SettingsImpl.fromJson(Map<String, dynamic> json) =>
@@ -224,10 +238,13 @@ class _$SettingsImpl implements _Settings {
   @override
   @JsonKey()
   final double terminalFontSize;
+  @override
+  @JsonKey()
+  final bool fileDebugMode;
 
   @override
   String toString() {
-    return 'Settings(keyStorageMode: $keyStorageMode, sessionTimeoutMinutes: $sessionTimeoutMinutes, theme: $theme, verboseLogging: $verboseLogging, toolbarButtons: $toolbarButtons, fixedNavSection: $fixedNavSection, terminalFontSize: $terminalFontSize)';
+    return 'Settings(keyStorageMode: $keyStorageMode, sessionTimeoutMinutes: $sessionTimeoutMinutes, theme: $theme, verboseLogging: $verboseLogging, toolbarButtons: $toolbarButtons, fixedNavSection: $fixedNavSection, terminalFontSize: $terminalFontSize, fileDebugMode: $fileDebugMode)';
   }
 
   @override
@@ -247,7 +264,9 @@ class _$SettingsImpl implements _Settings {
             (identical(other.fixedNavSection, fixedNavSection) ||
                 other.fixedNavSection == fixedNavSection) &&
             (identical(other.terminalFontSize, terminalFontSize) ||
-                other.terminalFontSize == terminalFontSize));
+                other.terminalFontSize == terminalFontSize) &&
+            (identical(other.fileDebugMode, fileDebugMode) ||
+                other.fileDebugMode == fileDebugMode));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -260,7 +279,8 @@ class _$SettingsImpl implements _Settings {
       verboseLogging,
       const DeepCollectionEquality().hash(_toolbarButtons),
       fixedNavSection,
-      terminalFontSize);
+      terminalFontSize,
+      fileDebugMode);
 
   /// Create a copy of Settings
   /// with the given fields replaced by the non-null parameter values.
@@ -286,7 +306,8 @@ abstract class _Settings implements Settings {
       final bool verboseLogging,
       final List<ToolbarButton> toolbarButtons,
       final bool fixedNavSection,
-      final double terminalFontSize}) = _$SettingsImpl;
+      final double terminalFontSize,
+      final bool fileDebugMode}) = _$SettingsImpl;
 
   factory _Settings.fromJson(Map<String, dynamic> json) =
       _$SettingsImpl.fromJson;
@@ -305,6 +326,8 @@ abstract class _Settings implements Settings {
   bool get fixedNavSection;
   @override
   double get terminalFontSize;
+  @override
+  bool get fileDebugMode;
 
   /// Create a copy of Settings
   /// with the given fields replaced by the non-null parameter values.
