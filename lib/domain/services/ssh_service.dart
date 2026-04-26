@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:dartssh2/dartssh2.dart';
@@ -41,6 +42,7 @@ final class SshConnection {
 
   final SSHClient client;
   final Server server;
+  SSHSession? _activeShell;
 
   Future<Result<SSHSession, AppError>> openShell({
     int width = 80,
@@ -50,10 +52,19 @@ final class SshConnection {
       final shell = await client.shell(
         pty: SSHPtyConfig(width: width, height: height),
       );
+      _activeShell = shell;
       return Ok(shell);
     } catch (e) {
       return Err(SshConnectionError(e.toString()));
     }
+  }
+
+  void sendCommand(String command) {
+    _activeShell?.write(Uint8List.fromList(utf8.encode('$command\n')));
+  }
+
+  void sendRaw(Uint8List bytes) {
+    _activeShell?.write(bytes);
   }
 
   void close() => client.close();
