@@ -98,6 +98,10 @@ class _KeyboardToolbarState extends ConsumerState<KeyboardToolbar> {
     showModalBottomSheet<void>(
       context: context,
       useSafeArea: true,
+      isScrollControlled: true,
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.6,
+      ),
       builder: (_) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -106,16 +110,21 @@ class _KeyboardToolbarState extends ConsumerState<KeyboardToolbar> {
             child: Text('Ajouter un bouton',
                 style: TextStyle(fontFamily: 'monospace', fontSize: 13)),
           ),
-          ...available.map((btn) => ListTile(
-            title: Text(_labelFor(btn.type),
-                style: const TextStyle(fontFamily: 'monospace')),
-            onTap: () {
-              ref.read(settingsNotifierProvider.notifier).save(
-                settings.copyWith(toolbarButtons: [...current, btn]),
-              );
-              Navigator.pop(context);
-            },
-          )),
+          Flexible(
+            child: ListView(
+              shrinkWrap: true,
+              children: available.map((btn) => ListTile(
+                title: Text(_labelFor(btn.type),
+                    style: const TextStyle(fontFamily: 'monospace')),
+                onTap: () {
+                  ref.read(settingsNotifierProvider.notifier).save(
+                    settings.copyWith(toolbarButtons: [...current, btn]),
+                  );
+                  Navigator.pop(context);
+                },
+              )).toList(),
+            ),
+          ),
         ],
       ),
     );
