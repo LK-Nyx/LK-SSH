@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models/settings.dart';
+import '../../data/ssh/toolbar_password_storage.dart';
 import '../providers/secure_key_provider.dart';
 import '../providers/settings_provider.dart';
 
@@ -38,10 +39,24 @@ class _SettingsBodyState extends ConsumerState<_SettingsBody> {
   bool _keyLoaded = false;
   String? _keyError;
 
+  final _pwStorage = ToolbarPasswordStorage();
+  final _pwCtrl = TextEditingController();
+
   @override
   void initState() {
     super.initState();
     _checkKeyLoaded();
+    _pwStorage.load().then((pw) {
+      if (mounted && pw != null && pw.isNotEmpty) {
+        _pwCtrl.text = '••••••••';
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _pwCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _checkKeyLoaded() async {
@@ -237,6 +252,64 @@ class _SettingsBodyState extends ConsumerState<_SettingsBody> {
           onChanged: (v) => ref
               .read(settingsNotifierProvider.notifier)
               .save(widget.settings.copyWith(verboseLogging: v)),
+        ),
+        const Divider(),
+        const _SectionHeader('Barre clavier'),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: TextField(
+            controller: _pwCtrl,
+            obscureText: true,
+            decoration: const InputDecoration(
+              labelText: 'Mot de passe (touche 🔑)',
+              border: OutlineInputBorder(),
+              helperText: 'Envoyé tel quel au shell via la touche mot de passe',
+            ),
+            onSubmitted: (pw) async {
+              if (pw.isNotEmpty) {
+                await _pwStorage.save(pw);
+                if (mounted) setState(() {});
+              }
+            },
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () async {
+                    final pw = _pwCtrl.text;
+                    if (pw.isNotEmpty && pw != '••••••••') {
+                      await _pwStorage.save(pw);
+                      if (mounted) setState(() {});
+                    }
+                  },
+                  child: const Text('Enregistrer le mot de passe'),
+                ),
+              ),
+            ],
+          ),
+        ),
+        SwitchListTile(
+          title: const Text('Section navigation fixe'),
+          subtitle: const Text(
+            'Épingle ↑↓←→ Esc Tab à gauche de la barre',
+          ),
+          value: widget.settings.fixedNavSection,
+          activeColor: const Color(0xFF00FF41),
+          onChanged: (v) => ref
+              .read(settingsNotifierProvider.notifier)
+              .save(widget.settings.copyWith(fixedNavSection: v)),
+        ),
+        ListTile(
+          title: const Text('Réinitialiser la barre clavier'),
+          subtitle: const Text('Remet les boutons par défaut'),
+          trailing: const Icon(Icons.refresh, color: Colors.grey),
+          onTap: () => ref
+              .read(settingsNotifierProvider.notifier)
+              .save(widget.settings.copyWith(toolbarButtons: [])),
         ),
       ],
     );
