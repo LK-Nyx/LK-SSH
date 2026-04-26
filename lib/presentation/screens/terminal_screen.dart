@@ -1,4 +1,4 @@
-import 'dart:typed_data';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,7 +12,10 @@ import '../providers/sessions_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/ssh_provider.dart';
 import '../providers/terminal_provider.dart';
+import '../../domain/services/ansi_service.dart';
 import '../../domain/services/ssh_service.dart';
+import '../providers/keyboard_toolbar_provider.dart' hide KeyboardToolbar;
+import '../widgets/keyboard_toolbar.dart';
 import '../widgets/snippet_panel.dart';
 
 class TerminalScreen extends ConsumerStatefulWidget {
@@ -121,13 +124,22 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
       ok: (shell) {
         _logOk(sessionId, 'Shell prêt — ${conn.server.host}');
         shell.stdout.listen(
-          (data) => terminal.write(String.fromCharCodes(data)),
+          (data) => terminal.write(utf8.decode(data, allowMalformed: true)),
         );
         shell.stderr.listen(
-          (data) => terminal.write(String.fromCharCodes(data)),
+          (data) => terminal.write(utf8.decode(data, allowMalformed: true)),
         );
-        terminal.onOutput = (data) =>
-            shell.write(Uint8List.fromList(data.codeUnits));
+        terminal.onOutput = (data) {
+          final mod =
+              ref.read(keyboardToolbarProvider(sessionId)).activeMod;
+          final bytes = AnsiService.applyMod(data, mod);
+          if (mod != null) {
+            ref
+                .read(keyboardToolbarProvider(sessionId).notifier)
+                .clearMod();
+          }
+          shell.write(bytes);
+        };
         shell.done.then((_) {
           if (mounted) _showError('Session terminée par le serveur');
         });
@@ -200,6 +212,7 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
             Expanded(
               child: _TerminalView(sessionId: _activeSessionId),
             ),
+            KeyboardToolbar(sessionId: _activeSessionId),
             SnippetPanel(
               sessionId: _activeSessionId,
               serverId: activeSession.serverId,
