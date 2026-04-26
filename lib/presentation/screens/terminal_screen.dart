@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -337,40 +338,101 @@ class _StatusDot extends StatelessWidget {
       );
 }
 
-class _TerminalView extends ConsumerWidget {
+class _TerminalView extends ConsumerStatefulWidget {
   const _TerminalView({required this.sessionId});
   final String sessionId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final terminal = ref.watch(terminalProvider(sessionId));
-    return TerminalView(
-      terminal,
-      autofocus: true,
-      theme: const TerminalTheme(
-        cursor: Color(0xFF00FF41),
-        selection: Color(0x5000FF41),
-        foreground: Color(0xFFCCCCCC),
-        background: Color(0xFF0D0D0D),
-        black: Color(0xFF000000),
-        red: Color(0xFFCC0000),
-        green: Color(0xFF00CC44),
-        yellow: Color(0xFFCCAA00),
-        blue: Color(0xFF0044CC),
-        magenta: Color(0xFFCC00CC),
-        cyan: Color(0xFF00AACC),
-        white: Color(0xFFCCCCCC),
-        brightBlack: Color(0xFF555555),
-        brightRed: Color(0xFFFF4444),
-        brightGreen: Color(0xFF00FF41),
-        brightYellow: Color(0xFFFFDD00),
-        brightBlue: Color(0xFF4488FF),
-        brightMagenta: Color(0xFFFF44FF),
-        brightCyan: Color(0xFF44DDFF),
-        brightWhite: Color(0xFFFFFFFF),
-        searchHitBackground: Color(0x4000FF41),
-        searchHitBackgroundCurrent: Color(0x8000FF41),
-        searchHitForeground: Color(0xFF000000),
+  ConsumerState<_TerminalView> createState() => _TerminalViewState();
+}
+
+class _TerminalViewState extends ConsumerState<_TerminalView> {
+  double _baseSize = 14.0;
+  double _pendingSize = 14.0;
+  Timer? _debounce;
+
+  @override
+  void initState() {
+    super.initState();
+    final fontSize = ref
+            .read(settingsNotifierProvider)
+            .valueOrNull
+            ?.terminalFontSize ??
+        14.0;
+    _baseSize = fontSize;
+    _pendingSize = fontSize;
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.listen(
+      settingsNotifierProvider
+          .select((s) => s.valueOrNull?.terminalFontSize ?? 14.0),
+      (prev, next) {
+        if (_debounce == null) setState(() => _pendingSize = next);
+      },
+    );
+
+    final terminal = ref.watch(terminalProvider(widget.sessionId));
+
+    return GestureDetector(
+      onScaleStart: (d) {
+        _baseSize = ref
+                .read(settingsNotifierProvider)
+                .valueOrNull
+                ?.terminalFontSize ??
+            _pendingSize;
+        _pendingSize = _baseSize;
+      },
+      onScaleUpdate: (d) {
+        final next = (_baseSize * d.scale).clamp(8.0, 28.0);
+        setState(() => _pendingSize = next);
+        _debounce?.cancel();
+        _debounce = Timer(const Duration(milliseconds: 300), () {
+          _debounce = null;
+          final s =
+              ref.read(settingsNotifierProvider).valueOrNull;
+          if (s == null || !mounted) return;
+          ref
+              .read(settingsNotifierProvider.notifier)
+              .save(s.copyWith(terminalFontSize: _pendingSize));
+        });
+      },
+      child: TerminalView(
+        terminal,
+        autofocus: true,
+        textStyle: TerminalStyle(fontSize: _pendingSize),
+        theme: const TerminalTheme(
+          cursor: Color(0xFF00FF41),
+          selection: Color(0x5000FF41),
+          foreground: Color(0xFFCCCCCC),
+          background: Color(0xFF0D0D0D),
+          black: Color(0xFF000000),
+          red: Color(0xFFCC0000),
+          green: Color(0xFF00CC44),
+          yellow: Color(0xFFCCAA00),
+          blue: Color(0xFF0044CC),
+          magenta: Color(0xFFCC00CC),
+          cyan: Color(0xFF00AACC),
+          white: Color(0xFFCCCCCC),
+          brightBlack: Color(0xFF555555),
+          brightRed: Color(0xFFFF4444),
+          brightGreen: Color(0xFF00FF41),
+          brightYellow: Color(0xFFFFDD00),
+          brightBlue: Color(0xFF4488FF),
+          brightMagenta: Color(0xFFFF44FF),
+          brightCyan: Color(0xFF44DDFF),
+          brightWhite: Color(0xFFFFFFFF),
+          searchHitBackground: Color(0x4000FF41),
+          searchHitBackgroundCurrent: Color(0x8000FF41),
+          searchHitForeground: Color(0xFF000000),
+        ),
       ),
     );
   }
