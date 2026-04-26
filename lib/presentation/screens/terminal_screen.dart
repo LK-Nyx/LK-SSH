@@ -154,6 +154,12 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
             shell.resizeTerminal(cols, rows);
           });
         };
+        // xterm peut avoir redimensionné AVANT que onResize soit défini
+        // (autoResize tire pendant le premier layout, avant que openShell finisse).
+        // On synchro la taille réelle après le prochain frame.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) shell.resizeTerminal(terminal.viewWidth, terminal.viewHeight);
+        });
         shell.done.then((_) {
           if (mounted) _showError('Session terminée par le serveur');
         });
@@ -377,12 +383,16 @@ class _TerminalViewState extends ConsumerState<_TerminalView> {
         14.0;
     _pendingSize = fontSize;
     _pinchStartSize = fontSize;
+    // S'assurer que le reflow est actif (peut rester false si widget reconstruit)
+    ref.read(terminalProvider(widget.sessionId)).reflowEnabled = true;
   }
 
   @override
   void dispose() {
     _debounce?.cancel();
     _contextMenuController.remove();
+    // Rétablir le reflow si le widget est détruit pendant un pinch
+    ref.read(terminalProvider(widget.sessionId)).reflowEnabled = true;
     super.dispose();
   }
 
@@ -392,6 +402,9 @@ class _TerminalViewState extends ConsumerState<_TerminalView> {
       final positions = _pointers.values.toList();
       _pinchStartDistance = (positions[0] - positions[1]).distance;
       _pinchStartSize = _pendingSize;
+      // Désactiver le reflow pendant le pinch pour éviter les artefacts visuels
+      // (xterm redispose tout le buffer à chaque changement de taille sinon)
+      ref.read(terminalProvider(widget.sessionId)).reflowEnabled = false;
     }
   }
 
@@ -420,12 +433,18 @@ class _TerminalViewState extends ConsumerState<_TerminalView> {
 
   void _onPointerUp(PointerUpEvent event) {
     _pointers.remove(event.pointer);
-    if (_pointers.length < 2) _pinchStartDistance = null;
+    if (_pointers.length < 2) {
+      _pinchStartDistance = null;
+      ref.read(terminalProvider(widget.sessionId)).reflowEnabled = true;
+    }
   }
 
   void _onPointerCancel(PointerCancelEvent event) {
     _pointers.remove(event.pointer);
-    if (_pointers.length < 2) _pinchStartDistance = null;
+    if (_pointers.length < 2) {
+      _pinchStartDistance = null;
+      ref.read(terminalProvider(widget.sessionId)).reflowEnabled = true;
+    }
   }
 
   void _showContextMenu({
