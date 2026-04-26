@@ -18,6 +18,7 @@ class Settings with _$Settings {
     @Default(false) bool verboseLogging,
     @Default([]) List<ToolbarButton> toolbarButtons,
     @Default(false) bool fixedNavSection,
+    @Default(14.0) double terminalFontSize,
   }) = _Settings;
 
   factory Settings.fromJson(Map<String, dynamic> json) =>

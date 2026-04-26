@@ -21,6 +21,7 @@ _$SettingsImpl _$$SettingsImplFromJson(Map<String, dynamic> json) =>
               .toList() ??
           const [],
       fixedNavSection: json['fixedNavSection'] as bool? ?? false,
+      terminalFontSize: (json['terminalFontSize'] as num?)?.toDouble() ?? 14.0,
     );
 
 Map<String, dynamic> _$$SettingsImplToJson(_$SettingsImpl instance) =>
@@ -31,6 +32,7 @@ Map<String, dynamic> _$$SettingsImplToJson(_$SettingsImpl instance) =>
       'verboseLogging': instance.verboseLogging,
       'toolbarButtons': instance.toolbarButtons,
       'fixedNavSection': instance.fixedNavSection,
+      'terminalFontSize': instance.terminalFontSize,
     };
 
 const _$KeyStorageModeEnumMap = {

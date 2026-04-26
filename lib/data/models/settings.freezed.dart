@@ -26,6 +26,7 @@ mixin _$Settings {
   bool get verboseLogging => throw _privateConstructorUsedError;
   List<ToolbarButton> get toolbarButtons => throw _privateConstructorUsedError;
   bool get fixedNavSection => throw _privateConstructorUsedError;
+  double get terminalFontSize => throw _privateConstructorUsedError;
 
   /// Serializes this Settings to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -48,7 +49,8 @@ abstract class $SettingsCopyWith<$Res> {
       AppTheme theme,
       bool verboseLogging,
       List<ToolbarButton> toolbarButtons,
-      bool fixedNavSection});
+      bool fixedNavSection,
+      double terminalFontSize});
 }
 
 /// @nodoc
@@ -72,6 +74,7 @@ class _$SettingsCopyWithImpl<$Res, $Val extends Settings>
     Object? verboseLogging = null,
     Object? toolbarButtons = null,
     Object? fixedNavSection = null,
+    Object? terminalFontSize = null,
   }) {
     return _then(_value.copyWith(
       keyStorageMode: null == keyStorageMode
@@ -98,6 +101,10 @@ class _$SettingsCopyWithImpl<$Res, $Val extends Settings>
           ? _value.fixedNavSection
           : fixedNavSection // ignore: cast_nullable_to_non_nullable
               as bool,
+      terminalFontSize: null == terminalFontSize
+          ? _value.terminalFontSize
+          : terminalFontSize // ignore: cast_nullable_to_non_nullable
+              as double,
     ) as $Val);
   }
 }
@@ -116,7 +123,8 @@ abstract class _$$SettingsImplCopyWith<$Res>
       AppTheme theme,
       bool verboseLogging,
       List<ToolbarButton> toolbarButtons,
-      bool fixedNavSection});
+      bool fixedNavSection,
+      double terminalFontSize});
 }
 
 /// @nodoc
@@ -138,6 +146,7 @@ class __$$SettingsImplCopyWithImpl<$Res>
     Object? verboseLogging = null,
     Object? toolbarButtons = null,
     Object? fixedNavSection = null,
+    Object? terminalFontSize = null,
   }) {
     return _then(_$SettingsImpl(
       keyStorageMode: null == keyStorageMode
@@ -164,6 +173,10 @@ class __$$SettingsImplCopyWithImpl<$Res>
           ? _value.fixedNavSection
           : fixedNavSection // ignore: cast_nullable_to_non_nullable
               as bool,
+      terminalFontSize: null == terminalFontSize
+          ? _value.terminalFontSize
+          : terminalFontSize // ignore: cast_nullable_to_non_nullable
+              as double,
     ));
   }
 }
@@ -177,7 +190,8 @@ class _$SettingsImpl implements _Settings {
       this.theme = AppTheme.dark,
       this.verboseLogging = false,
       final List<ToolbarButton> toolbarButtons = const [],
-      this.fixedNavSection = false})
+      this.fixedNavSection = false,
+      this.terminalFontSize = 14.0})
       : _toolbarButtons = toolbarButtons;
 
   factory _$SettingsImpl.fromJson(Map<String, dynamic> json) =>
@@ -207,10 +221,13 @@ class _$SettingsImpl implements _Settings {
   @override
   @JsonKey()
   final bool fixedNavSection;
+  @override
+  @JsonKey()
+  final double terminalFontSize;
 
   @override
   String toString() {
-    return 'Settings(keyStorageMode: $keyStorageMode, sessionTimeoutMinutes: $sessionTimeoutMinutes, theme: $theme, verboseLogging: $verboseLogging, toolbarButtons: $toolbarButtons, fixedNavSection: $fixedNavSection)';
+    return 'Settings(keyStorageMode: $keyStorageMode, sessionTimeoutMinutes: $sessionTimeoutMinutes, theme: $theme, verboseLogging: $verboseLogging, toolbarButtons: $toolbarButtons, fixedNavSection: $fixedNavSection, terminalFontSize: $terminalFontSize)';
   }
 
   @override
@@ -228,7 +245,9 @@ class _$SettingsImpl implements _Settings {
             const DeepCollectionEquality()
                 .equals(other._toolbarButtons, _toolbarButtons) &&
             (identical(other.fixedNavSection, fixedNavSection) ||
-                other.fixedNavSection == fixedNavSection));
+                other.fixedNavSection == fixedNavSection) &&
+            (identical(other.terminalFontSize, terminalFontSize) ||
+                other.terminalFontSize == terminalFontSize));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -240,7 +259,8 @@ class _$SettingsImpl implements _Settings {
       theme,
       verboseLogging,
       const DeepCollectionEquality().hash(_toolbarButtons),
-      fixedNavSection);
+      fixedNavSection,
+      terminalFontSize);
 
   /// Create a copy of Settings
   /// with the given fields replaced by the non-null parameter values.
@@ -265,7 +285,8 @@ abstract class _Settings implements Settings {
       final AppTheme theme,
       final bool verboseLogging,
       final List<ToolbarButton> toolbarButtons,
-      final bool fixedNavSection}) = _$SettingsImpl;
+      final bool fixedNavSection,
+      final double terminalFontSize}) = _$SettingsImpl;
 
   factory _Settings.fromJson(Map<String, dynamic> json) =
       _$SettingsImpl.fromJson;
@@ -282,6 +303,8 @@ abstract class _Settings implements Settings {
   List<ToolbarButton> get toolbarButtons;
   @override
   bool get fixedNavSection;
+  @override
+  double get terminalFontSize;
 
   /// Create a copy of Settings
   /// with the given fields replaced by the non-null parameter values.
