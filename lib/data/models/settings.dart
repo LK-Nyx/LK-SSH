@@ -1,5 +1,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import 'toolbar_button.dart';
+
 part 'settings.freezed.dart';
 part 'settings.g.dart';
 
@@ -14,6 +16,8 @@ class Settings with _$Settings {
     @Default(5) int sessionTimeoutMinutes,
     @Default(AppTheme.dark) AppTheme theme,
     @Default(false) bool verboseLogging,
+    @Default([]) List<ToolbarButton> toolbarButtons,
+    @Default(false) bool fixedNavSection,
   }) = _Settings;
 
   factory Settings.fromJson(Map<String, dynamic> json) =>

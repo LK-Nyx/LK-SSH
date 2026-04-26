@@ -16,6 +16,11 @@ _$SettingsImpl _$$SettingsImplFromJson(Map<String, dynamic> json) =>
       theme: $enumDecodeNullable(_$AppThemeEnumMap, json['theme']) ??
           AppTheme.dark,
       verboseLogging: json['verboseLogging'] as bool? ?? false,
+      toolbarButtons: (json['toolbarButtons'] as List<dynamic>?)
+              ?.map((e) => ToolbarButton.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
+      fixedNavSection: json['fixedNavSection'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$$SettingsImplToJson(_$SettingsImpl instance) =>
@@ -24,6 +29,8 @@ Map<String, dynamic> _$$SettingsImplToJson(_$SettingsImpl instance) =>
       'sessionTimeoutMinutes': instance.sessionTimeoutMinutes,
       'theme': _$AppThemeEnumMap[instance.theme]!,
       'verboseLogging': instance.verboseLogging,
+      'toolbarButtons': instance.toolbarButtons,
+      'fixedNavSection': instance.fixedNavSection,
     };
 
 const _$KeyStorageModeEnumMap = {

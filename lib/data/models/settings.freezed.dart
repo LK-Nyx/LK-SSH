@@ -24,6 +24,8 @@ mixin _$Settings {
   int get sessionTimeoutMinutes => throw _privateConstructorUsedError;
   AppTheme get theme => throw _privateConstructorUsedError;
   bool get verboseLogging => throw _privateConstructorUsedError;
+  List<ToolbarButton> get toolbarButtons => throw _privateConstructorUsedError;
+  bool get fixedNavSection => throw _privateConstructorUsedError;
 
   /// Serializes this Settings to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -44,7 +46,9 @@ abstract class $SettingsCopyWith<$Res> {
       {KeyStorageMode keyStorageMode,
       int sessionTimeoutMinutes,
       AppTheme theme,
-      bool verboseLogging});
+      bool verboseLogging,
+      List<ToolbarButton> toolbarButtons,
+      bool fixedNavSection});
 }
 
 /// @nodoc
@@ -66,6 +70,8 @@ class _$SettingsCopyWithImpl<$Res, $Val extends Settings>
     Object? sessionTimeoutMinutes = null,
     Object? theme = null,
     Object? verboseLogging = null,
+    Object? toolbarButtons = null,
+    Object? fixedNavSection = null,
   }) {
     return _then(_value.copyWith(
       keyStorageMode: null == keyStorageMode
@@ -84,6 +90,14 @@ class _$SettingsCopyWithImpl<$Res, $Val extends Settings>
           ? _value.verboseLogging
           : verboseLogging // ignore: cast_nullable_to_non_nullable
               as bool,
+      toolbarButtons: null == toolbarButtons
+          ? _value.toolbarButtons
+          : toolbarButtons // ignore: cast_nullable_to_non_nullable
+              as List<ToolbarButton>,
+      fixedNavSection: null == fixedNavSection
+          ? _value.fixedNavSection
+          : fixedNavSection // ignore: cast_nullable_to_non_nullable
+              as bool,
     ) as $Val);
   }
 }
@@ -100,7 +114,9 @@ abstract class _$$SettingsImplCopyWith<$Res>
       {KeyStorageMode keyStorageMode,
       int sessionTimeoutMinutes,
       AppTheme theme,
-      bool verboseLogging});
+      bool verboseLogging,
+      List<ToolbarButton> toolbarButtons,
+      bool fixedNavSection});
 }
 
 /// @nodoc
@@ -120,6 +136,8 @@ class __$$SettingsImplCopyWithImpl<$Res>
     Object? sessionTimeoutMinutes = null,
     Object? theme = null,
     Object? verboseLogging = null,
+    Object? toolbarButtons = null,
+    Object? fixedNavSection = null,
   }) {
     return _then(_$SettingsImpl(
       keyStorageMode: null == keyStorageMode
@@ -138,6 +156,14 @@ class __$$SettingsImplCopyWithImpl<$Res>
           ? _value.verboseLogging
           : verboseLogging // ignore: cast_nullable_to_non_nullable
               as bool,
+      toolbarButtons: null == toolbarButtons
+          ? _value._toolbarButtons
+          : toolbarButtons // ignore: cast_nullable_to_non_nullable
+              as List<ToolbarButton>,
+      fixedNavSection: null == fixedNavSection
+          ? _value.fixedNavSection
+          : fixedNavSection // ignore: cast_nullable_to_non_nullable
+              as bool,
     ));
   }
 }
@@ -149,7 +175,10 @@ class _$SettingsImpl implements _Settings {
       {this.keyStorageMode = KeyStorageMode.secureStorage,
       this.sessionTimeoutMinutes = 5,
       this.theme = AppTheme.dark,
-      this.verboseLogging = false});
+      this.verboseLogging = false,
+      final List<ToolbarButton> toolbarButtons = const [],
+      this.fixedNavSection = false})
+      : _toolbarButtons = toolbarButtons;
 
   factory _$SettingsImpl.fromJson(Map<String, dynamic> json) =>
       _$$SettingsImplFromJson(json);
@@ -166,10 +195,22 @@ class _$SettingsImpl implements _Settings {
   @override
   @JsonKey()
   final bool verboseLogging;
+  final List<ToolbarButton> _toolbarButtons;
+  @override
+  @JsonKey()
+  List<ToolbarButton> get toolbarButtons {
+    if (_toolbarButtons is EqualUnmodifiableListView) return _toolbarButtons;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_toolbarButtons);
+  }
+
+  @override
+  @JsonKey()
+  final bool fixedNavSection;
 
   @override
   String toString() {
-    return 'Settings(keyStorageMode: $keyStorageMode, sessionTimeoutMinutes: $sessionTimeoutMinutes, theme: $theme, verboseLogging: $verboseLogging)';
+    return 'Settings(keyStorageMode: $keyStorageMode, sessionTimeoutMinutes: $sessionTimeoutMinutes, theme: $theme, verboseLogging: $verboseLogging, toolbarButtons: $toolbarButtons, fixedNavSection: $fixedNavSection)';
   }
 
   @override
@@ -183,13 +224,23 @@ class _$SettingsImpl implements _Settings {
                 other.sessionTimeoutMinutes == sessionTimeoutMinutes) &&
             (identical(other.theme, theme) || other.theme == theme) &&
             (identical(other.verboseLogging, verboseLogging) ||
-                other.verboseLogging == verboseLogging));
+                other.verboseLogging == verboseLogging) &&
+            const DeepCollectionEquality()
+                .equals(other._toolbarButtons, _toolbarButtons) &&
+            (identical(other.fixedNavSection, fixedNavSection) ||
+                other.fixedNavSection == fixedNavSection));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, keyStorageMode,
-      sessionTimeoutMinutes, theme, verboseLogging);
+  int get hashCode => Object.hash(
+      runtimeType,
+      keyStorageMode,
+      sessionTimeoutMinutes,
+      theme,
+      verboseLogging,
+      const DeepCollectionEquality().hash(_toolbarButtons),
+      fixedNavSection);
 
   /// Create a copy of Settings
   /// with the given fields replaced by the non-null parameter values.
@@ -212,7 +263,9 @@ abstract class _Settings implements Settings {
       {final KeyStorageMode keyStorageMode,
       final int sessionTimeoutMinutes,
       final AppTheme theme,
-      final bool verboseLogging}) = _$SettingsImpl;
+      final bool verboseLogging,
+      final List<ToolbarButton> toolbarButtons,
+      final bool fixedNavSection}) = _$SettingsImpl;
 
   factory _Settings.fromJson(Map<String, dynamic> json) =
       _$SettingsImpl.fromJson;
@@ -225,6 +278,10 @@ abstract class _Settings implements Settings {
   AppTheme get theme;
   @override
   bool get verboseLogging;
+  @override
+  List<ToolbarButton> get toolbarButtons;
+  @override
+  bool get fixedNavSection;
 
   /// Create a copy of Settings
   /// with the given fields replaced by the non-null parameter values.
