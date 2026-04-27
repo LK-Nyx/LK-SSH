@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models/settings.dart';
+import 'keys_screen.dart';
 import '../../data/ssh/toolbar_password_storage.dart';
 import '../../data/storage/debug_log_service.dart';
 import '../providers/secure_key_provider.dart';
@@ -168,21 +169,23 @@ class _SettingsBodyState extends ConsumerState<_SettingsBody> {
     return ListView(
       children: [
         const _SectionHeader('Stockage clé SSH'),
-        RadioListTile<KeyStorageMode>(
-          title: const Text('Mode A — Secure Storage'),
-          value: KeyStorageMode.secureStorage,
+        RadioGroup<KeyStorageMode>(
           groupValue: widget.settings.keyStorageMode,
           onChanged: (v) => ref
               .read(settingsNotifierProvider.notifier)
               .save(widget.settings.copyWith(keyStorageMode: v!)),
-        ),
-        RadioListTile<KeyStorageMode>(
-          title: const Text('Mode D — + Passphrase argon2id'),
-          value: KeyStorageMode.passphraseProtected,
-          groupValue: widget.settings.keyStorageMode,
-          onChanged: (v) => ref
-              .read(settingsNotifierProvider.notifier)
-              .save(widget.settings.copyWith(keyStorageMode: v!)),
+          child: const Column(
+            children: [
+              RadioListTile<KeyStorageMode>(
+                title: Text('Mode A — Secure Storage'),
+                value: KeyStorageMode.secureStorage,
+              ),
+              RadioListTile<KeyStorageMode>(
+                title: Text('Mode D — + Passphrase argon2id'),
+                value: KeyStorageMode.passphraseProtected,
+              ),
+            ],
+          ),
         ),
         const Divider(),
         const _SectionHeader('Clé privée ed25519'),
@@ -228,6 +231,17 @@ class _SettingsBodyState extends ConsumerState<_SettingsBody> {
           ),
         ),
         const Divider(),
+        const _SectionHeader('Clés SSH'),
+        ListTile(
+          leading: const Icon(Icons.key),
+          title: const Text('Gérer les clés'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute<void>(builder: (_) => const KeysScreen()),
+          ),
+        ),
+        const Divider(),
         const _SectionHeader('Session'),
         ListTile(
           title: const Text('Timeout (minutes)'),
@@ -249,7 +263,7 @@ class _SettingsBodyState extends ConsumerState<_SettingsBody> {
             'Affiche les étapes de connexion SSH dans le terminal',
           ),
           value: widget.settings.verboseLogging,
-          activeColor: const Color(0xFF00FF41),
+          activeThumbColor: const Color(0xFF00FF41),
           onChanged: (v) => ref
               .read(settingsNotifierProvider.notifier)
               .save(widget.settings.copyWith(verboseLogging: v)),
@@ -260,7 +274,7 @@ class _SettingsBodyState extends ConsumerState<_SettingsBody> {
             'Écrit un journal détaillé dans un fichier sur le téléphone',
           ),
           value: widget.settings.fileDebugMode,
-          activeColor: const Color(0xFF00FF41),
+          activeThumbColor: const Color(0xFF00FF41),
           onChanged: (v) async {
             await DebugLogService.instance.setEnabled(v);
             if (!mounted) return;
@@ -326,7 +340,7 @@ class _SettingsBodyState extends ConsumerState<_SettingsBody> {
             'Épingle ↑↓←→ Esc Tab à gauche de la barre',
           ),
           value: widget.settings.fixedNavSection,
-          activeColor: const Color(0xFF00FF41),
+          activeThumbColor: const Color(0xFF00FF41),
           onChanged: (v) => ref
               .read(settingsNotifierProvider.notifier)
               .save(widget.settings.copyWith(fixedNavSection: v)),

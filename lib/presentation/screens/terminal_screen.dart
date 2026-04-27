@@ -5,16 +5,17 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:xterm/xterm.dart';
 
+import '../../data/models/auth_prompt_request.dart';
 import '../../data/models/server.dart';
 import '../../data/models/session.dart';
-import '../../data/models/settings.dart';
 import '../providers/diagnostic_provider.dart';
 import '../providers/keyboard_animation_provider.dart';
-import '../providers/secure_key_provider.dart';
 import '../providers/sessions_provider.dart';
 import '../providers/settings_provider.dart';
-import 'settings_screen.dart';
 import '../providers/ssh_provider.dart';
+import '../widgets/host_key_mismatch_sheet.dart';
+import '../widgets/keyboard_interactive_sheet.dart';
+import '../widgets/password_prompt_sheet.dart';
 import '../providers/terminal_provider.dart';
 import '../../data/storage/debug_log_service.dart';
 import '../../domain/services/ansi_service.dart';
@@ -41,12 +42,35 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
   late String _activeSessionId;
   Timer? _ptyDebounce;
   final _inactivityTimers = <String, Timer>{};
+  final _promptSubs = <String, StreamSubscription<AuthPromptRequest>>{};
 
   @override
   void dispose() {
     _ptyDebounce?.cancel();
     for (final t in _inactivityTimers.values) { t.cancel(); }
+    for (final s in _promptSubs.values) { s.cancel(); }
     super.dispose();
+  }
+
+  Future<void> _handlePrompt(AuthPromptRequest req) async {
+    if (!mounted) return;
+    switch (req) {
+      case PasswordPromptRequest():
+        final pwd = await PasswordPromptSheet.show(
+          context,
+          user: req.user,
+          host: req.host,
+        );
+        if (!req.completer.isCompleted) req.completer.complete(pwd);
+      case KbInteractivePromptRequest():
+        final answers =
+            await KeyboardInteractiveSheet.show(context, req.request);
+        if (!req.completer.isCompleted) req.completer.complete(answers);
+      case HostKeyMismatchRequest():
+        final decision =
+            await HostKeyMismatchSheet.show(context, req.change);
+        if (!req.completer.isCompleted) req.completer.complete(decision);
+    }
   }
 
   void _resetInactivityTimer(String sessionId) {
@@ -86,66 +110,18 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
 
   Future<void> _connect(String sessionId, Server server) async {
     _log(sessionId, 'Connexion à ${server.host}:${server.port} (${server.username})…');
-    final storage = ref.read(secureKeyStorageProvider);
-    final settings = ref.read(settingsNotifierProvider).valueOrNull;
-
-    _log(sessionId, 'Chargement de la clé SSH…', verboseOnly: true);
-    final keyResult = await storage.loadKey(
-      passphrase:
-          settings?.keyStorageMode == KeyStorageMode.passphraseProtected
-              ? await _askPassphrase()
-              : null,
-    );
+    _log(sessionId, 'Handshake SSH…', verboseOnly: true);
+    final notifier = ref.read(sshNotifierProvider(sessionId).notifier);
+    _promptSubs[sessionId] ??= notifier.prompts.listen(_handlePrompt);
+    final result = await notifier.connect(server);
     if (!mounted) return;
-
-    keyResult.when(
-      ok: (key) async {
-        _log(sessionId, 'Clé chargée — handshake SSH…', verboseOnly: true);
-        final result = await ref
-            .read(sshNotifierProvider(sessionId).notifier)
-            .connect(server, key);
-        if (!mounted) return;
-        result.when(
-          ok: (conn) {
-            _log(sessionId, 'Authentifié par clé publique', verboseOnly: true);
-            _log(sessionId, 'Ouverture du shell PTY (120×40)…', verboseOnly: true);
-            _bindTerminal(sessionId, conn);
-          },
-          err: (e) => _showError(e.message),
-        );
+    result.when(
+      ok: (conn) {
+        _log(sessionId, 'Authentifié', verboseOnly: true);
+        _log(sessionId, 'Ouverture du shell PTY (120×40)…', verboseOnly: true);
+        _bindTerminal(sessionId, conn);
       },
-      err: (e) {
-        _showError(e.message);
-        if (!mounted) return;
-        Navigator.push(
-          context,
-          MaterialPageRoute<void>(builder: (_) => const SettingsScreen()),
-        );
-      },
-    );
-  }
-
-  Future<String?> _askPassphrase() async {
-    final ctrl = TextEditingController();
-    return showDialog<String>(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => AlertDialog(
-        title: const Text('Passphrase'),
-        content: TextField(
-          controller: ctrl,
-          obscureText: true,
-          autofocus: true,
-          decoration:
-              const InputDecoration(labelText: 'Passphrase clé SSH'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, ctrl.text),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
+      err: (e) => _showError(e.message),
     );
   }
 
@@ -229,6 +205,7 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
 
   void _closeSession(String id) {
     final sessions = ref.read(sessionsNotifierProvider);
+    _promptSubs.remove(id)?.cancel();
     ref.read(sshNotifierProvider(id).notifier).disconnect();
     ref.read(sessionsNotifierProvider.notifier).close(id);
     if (_activeSessionId == id) {

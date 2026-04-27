@@ -20,6 +20,7 @@ class Settings with _$Settings {
     @Default(false) bool fixedNavSection,
     @Default(14.0) double terminalFontSize,
     @Default(false) bool fileDebugMode,
+    @Default(false) bool migrationP1Done,
   }) = _Settings;
 
   factory Settings.fromJson(Map<String, dynamic> json) =>

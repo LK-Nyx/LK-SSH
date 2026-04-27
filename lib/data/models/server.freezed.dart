@@ -25,6 +25,9 @@ mixin _$Server {
   String get host => throw _privateConstructorUsedError;
   int get port => throw _privateConstructorUsedError;
   String get username => throw _privateConstructorUsedError;
+  AuthMethod get authMethod => throw _privateConstructorUsedError;
+  String? get keyId => throw _privateConstructorUsedError;
+  bool get savePassword => throw _privateConstructorUsedError;
 
   /// Serializes this Server to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -40,7 +43,15 @@ abstract class $ServerCopyWith<$Res> {
   factory $ServerCopyWith(Server value, $Res Function(Server) then) =
       _$ServerCopyWithImpl<$Res, Server>;
   @useResult
-  $Res call({String id, String label, String host, int port, String username});
+  $Res call(
+      {String id,
+      String label,
+      String host,
+      int port,
+      String username,
+      AuthMethod authMethod,
+      String? keyId,
+      bool savePassword});
 }
 
 /// @nodoc
@@ -63,6 +74,9 @@ class _$ServerCopyWithImpl<$Res, $Val extends Server>
     Object? host = null,
     Object? port = null,
     Object? username = null,
+    Object? authMethod = null,
+    Object? keyId = freezed,
+    Object? savePassword = null,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -85,6 +99,18 @@ class _$ServerCopyWithImpl<$Res, $Val extends Server>
           ? _value.username
           : username // ignore: cast_nullable_to_non_nullable
               as String,
+      authMethod: null == authMethod
+          ? _value.authMethod
+          : authMethod // ignore: cast_nullable_to_non_nullable
+              as AuthMethod,
+      keyId: freezed == keyId
+          ? _value.keyId
+          : keyId // ignore: cast_nullable_to_non_nullable
+              as String?,
+      savePassword: null == savePassword
+          ? _value.savePassword
+          : savePassword // ignore: cast_nullable_to_non_nullable
+              as bool,
     ) as $Val);
   }
 }
@@ -96,7 +122,15 @@ abstract class _$$ServerImplCopyWith<$Res> implements $ServerCopyWith<$Res> {
       __$$ServerImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String id, String label, String host, int port, String username});
+  $Res call(
+      {String id,
+      String label,
+      String host,
+      int port,
+      String username,
+      AuthMethod authMethod,
+      String? keyId,
+      bool savePassword});
 }
 
 /// @nodoc
@@ -117,6 +151,9 @@ class __$$ServerImplCopyWithImpl<$Res>
     Object? host = null,
     Object? port = null,
     Object? username = null,
+    Object? authMethod = null,
+    Object? keyId = freezed,
+    Object? savePassword = null,
   }) {
     return _then(_$ServerImpl(
       id: null == id
@@ -139,6 +176,18 @@ class __$$ServerImplCopyWithImpl<$Res>
           ? _value.username
           : username // ignore: cast_nullable_to_non_nullable
               as String,
+      authMethod: null == authMethod
+          ? _value.authMethod
+          : authMethod // ignore: cast_nullable_to_non_nullable
+              as AuthMethod,
+      keyId: freezed == keyId
+          ? _value.keyId
+          : keyId // ignore: cast_nullable_to_non_nullable
+              as String?,
+      savePassword: null == savePassword
+          ? _value.savePassword
+          : savePassword // ignore: cast_nullable_to_non_nullable
+              as bool,
     ));
   }
 }
@@ -151,7 +200,10 @@ class _$ServerImpl implements _Server {
       required this.label,
       required this.host,
       this.port = 22,
-      required this.username});
+      required this.username,
+      this.authMethod = AuthMethod.key,
+      this.keyId,
+      this.savePassword = false});
 
   factory _$ServerImpl.fromJson(Map<String, dynamic> json) =>
       _$$ServerImplFromJson(json);
@@ -167,10 +219,18 @@ class _$ServerImpl implements _Server {
   final int port;
   @override
   final String username;
+  @override
+  @JsonKey()
+  final AuthMethod authMethod;
+  @override
+  final String? keyId;
+  @override
+  @JsonKey()
+  final bool savePassword;
 
   @override
   String toString() {
-    return 'Server(id: $id, label: $label, host: $host, port: $port, username: $username)';
+    return 'Server(id: $id, label: $label, host: $host, port: $port, username: $username, authMethod: $authMethod, keyId: $keyId, savePassword: $savePassword)';
   }
 
   @override
@@ -183,12 +243,18 @@ class _$ServerImpl implements _Server {
             (identical(other.host, host) || other.host == host) &&
             (identical(other.port, port) || other.port == port) &&
             (identical(other.username, username) ||
-                other.username == username));
+                other.username == username) &&
+            (identical(other.authMethod, authMethod) ||
+                other.authMethod == authMethod) &&
+            (identical(other.keyId, keyId) || other.keyId == keyId) &&
+            (identical(other.savePassword, savePassword) ||
+                other.savePassword == savePassword));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, id, label, host, port, username);
+  int get hashCode => Object.hash(runtimeType, id, label, host, port, username,
+      authMethod, keyId, savePassword);
 
   /// Create a copy of Server
   /// with the given fields replaced by the non-null parameter values.
@@ -212,7 +278,10 @@ abstract class _Server implements Server {
       required final String label,
       required final String host,
       final int port,
-      required final String username}) = _$ServerImpl;
+      required final String username,
+      final AuthMethod authMethod,
+      final String? keyId,
+      final bool savePassword}) = _$ServerImpl;
 
   factory _Server.fromJson(Map<String, dynamic> json) = _$ServerImpl.fromJson;
 
@@ -226,6 +295,12 @@ abstract class _Server implements Server {
   int get port;
   @override
   String get username;
+  @override
+  AuthMethod get authMethod;
+  @override
+  String? get keyId;
+  @override
+  bool get savePassword;
 
   /// Create a copy of Server
   /// with the given fields replaced by the non-null parameter values.

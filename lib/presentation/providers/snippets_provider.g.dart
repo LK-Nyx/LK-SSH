@@ -6,7 +6,7 @@ part of 'snippets_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$snippetsNotifierHash() => r'f20bb4e2a4bf1d16b98013b20e69f3aadb4bd240';
+String _$snippetsNotifierHash() => r'f2f9c4c78ce373ec3272cd253d196fb74ddfe3b1';
 
 /// See also [SnippetsNotifier].
 @ProviderFor(SnippetsNotifier)
@@ -23,7 +23,7 @@ final snippetsNotifierProvider =
 
 typedef _$SnippetsNotifier = AutoDisposeAsyncNotifier<List<Snippet>>;
 String _$categoriesNotifierHash() =>
-    r'a9a15f25fc446493da501e80e98c0e7acc3aa854';
+    r'31b5a5832b871843936ae4cf62460f9dbff7c1ff';
 
 /// See also [CategoriesNotifier].
 @ProviderFor(CategoriesNotifier)

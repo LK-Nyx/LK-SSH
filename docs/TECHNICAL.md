@@ -431,10 +431,49 @@ Fichiers générés : `*.freezed.dart`, `*.g.dart` (ne pas modifier manuellement
 
 ## Tests
 
-```
-test/
-├── data/storage/json_storage_service_test.dart   # Tests CRUD storage
-└── domain/services/snippet_service_test.dart     # Tests extraction/résolution variables
-```
+Tests mocktail + fakes. Pas de tests UI/widget actuellement (smoke manuel sur device).
 
-Tests mocktail. Pas de tests UI/widget actuellement.
+---
+
+## Phase 1 — Auth multi-méthodes & host trust
+
+Implémentée dans la branche `feat/p1-auth-host-trust`. Spec : [`docs/superpowers/specs/2026-04-27-auth-host-trust-design.md`](superpowers/specs/2026-04-27-auth-host-trust-design.md). Plan : [`docs/superpowers/plans/2026-04-27-auth-host-trust.md`](superpowers/plans/2026-04-27-auth-host-trust.md).
+
+### Méthodes d'authentification
+
+`Server.authMethod` (enum `AuthMethod`) choisit entre :
+- **`key`** — clé SSH (référencée par `Server.keyId` qui pointe vers une `SshKey` du registre)
+- **`password`** — mot de passe (avec opt-in `savePassword` pour le stocker via `IPasswordStorage`)
+- **`keyboardInteractive`** — challenges/réponses (2FA, OTP) via `SSHUserInfoRequest`
+
+Le `sshNotifier` lit `authMethod` et construit un `AuthCredentials` (sealed : `KeyCreds` / `PasswordCreds` / `InteractiveCreds`) que `SshClientFactory.connect()` consomme.
+
+### Multi-keys
+
+Modèle `SshKey { id, label, addedAt }` (Freezed). Métadonnées dans `ssh_keys.json`. Bytes (et passphrase éventuelle) dans :
+- **Mode A** : `SshKeyRegistryA` — `FlutterSecureStorage` indexé par `key_<id>` / `pp_<id>`
+- **Mode D** : `SshKeyRegistryD` — vault `key_vault.bin` chiffré en Argon2id (mêmes paramètres que le mode D legacy) + AES-GCM, contenu = `Map<keyId, {bytes_b64, passphrase}>`
+
+Le provider `sshKeyRegistryProvider` est async et retourne le bon registry selon `KeyStorageMode`. En mode D, il lit la passphrase via `vaultPassphraseProvider` (in-memory, jamais persisté).
+
+### Host trust (TOFU)
+
+`HostKeyVerifier` :
+- **1ère connexion** : auto-pin du fingerprint dans `known_hosts.json` (`Map<host:port, fingerprint>`)
+- **Mismatch** : invoque `onMismatch` qui affiche `HostKeyMismatchSheet` ; le user choisit `reject` / `acceptOnce` / `acceptAndPin`
+
+dartssh2 fournit le digest MD5 du host key (typedef `SSHHostkeyVerifyHandler`). On l'encode en base64 pour le storage.
+
+### Boot & migration
+
+`main.dart` orchestre :
+1. Charge `Settings`. Si mode D ET (vault existe OU clé legacy mode D) → push `UnlockScreen`
+2. User entre la passphrase, vérifiée contre le vault ou la clé legacy
+3. `vaultPassphraseProvider.unlock(passphrase)` (in-memory)
+4. Run `P1AuthMigration` :
+   - Si flag `migrationP1Done` ou pas de clé legacy → no-op
+   - Sinon : crée `SshKey "default"`, copie les bytes legacy via `ISshKeyRegistry.save`, retag les serveurs (`authMethod=key, keyId=default`), set le flag
+
+### Prompts à la connexion
+
+`sshNotifier` expose `Stream<AuthPromptRequest>` (sealed : `PasswordPromptRequest` / `KbInteractivePromptRequest` / `HostKeyMismatchRequest`, chacun avec son `Completer`). `terminal_screen` souscrit par sessionId et dispatche vers la bottom sheet correspondante. Au dispose, les Completers en attente sont résolus avec une valeur de cancel pour ne pas bloquer le `connect()` Future.
