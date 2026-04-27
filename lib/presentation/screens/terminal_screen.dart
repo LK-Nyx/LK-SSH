@@ -7,13 +7,10 @@ import 'package:xterm/xterm.dart';
 
 import '../../data/models/server.dart';
 import '../../data/models/session.dart';
-import '../../data/models/settings.dart';
 import '../providers/diagnostic_provider.dart';
 import '../providers/keyboard_animation_provider.dart';
-import '../providers/secure_key_provider.dart';
 import '../providers/sessions_provider.dart';
 import '../providers/settings_provider.dart';
-import 'settings_screen.dart';
 import '../providers/ssh_provider.dart';
 import '../providers/terminal_provider.dart';
 import '../../data/storage/debug_log_service.dart';
@@ -86,66 +83,18 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
 
   Future<void> _connect(String sessionId, Server server) async {
     _log(sessionId, 'Connexion à ${server.host}:${server.port} (${server.username})…');
-    final storage = ref.read(secureKeyStorageProvider);
-    final settings = ref.read(settingsNotifierProvider).valueOrNull;
-
-    _log(sessionId, 'Chargement de la clé SSH…', verboseOnly: true);
-    final keyResult = await storage.loadKey(
-      passphrase:
-          settings?.keyStorageMode == KeyStorageMode.passphraseProtected
-              ? await _askPassphrase()
-              : null,
-    );
+    _log(sessionId, 'Handshake SSH…', verboseOnly: true);
+    final result = await ref
+        .read(sshNotifierProvider(sessionId).notifier)
+        .connect(server);
     if (!mounted) return;
-
-    keyResult.when(
-      ok: (key) async {
-        _log(sessionId, 'Clé chargée — handshake SSH…', verboseOnly: true);
-        final result = await ref
-            .read(sshNotifierProvider(sessionId).notifier)
-            .connect(server, key);
-        if (!mounted) return;
-        result.when(
-          ok: (conn) {
-            _log(sessionId, 'Authentifié par clé publique', verboseOnly: true);
-            _log(sessionId, 'Ouverture du shell PTY (120×40)…', verboseOnly: true);
-            _bindTerminal(sessionId, conn);
-          },
-          err: (e) => _showError(e.message),
-        );
+    result.when(
+      ok: (conn) {
+        _log(sessionId, 'Authentifié', verboseOnly: true);
+        _log(sessionId, 'Ouverture du shell PTY (120×40)…', verboseOnly: true);
+        _bindTerminal(sessionId, conn);
       },
-      err: (e) {
-        _showError(e.message);
-        if (!mounted) return;
-        Navigator.push(
-          context,
-          MaterialPageRoute<void>(builder: (_) => const SettingsScreen()),
-        );
-      },
-    );
-  }
-
-  Future<String?> _askPassphrase() async {
-    final ctrl = TextEditingController();
-    return showDialog<String>(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => AlertDialog(
-        title: const Text('Passphrase'),
-        content: TextField(
-          controller: ctrl,
-          obscureText: true,
-          autofocus: true,
-          decoration:
-              const InputDecoration(labelText: 'Passphrase clé SSH'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, ctrl.text),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
+      err: (e) => _showError(e.message),
     );
   }
 
