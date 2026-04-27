@@ -9,6 +9,7 @@ import '../models/category.dart';
 import '../models/server.dart';
 import '../models/settings.dart';
 import '../models/snippet.dart';
+import '../models/ssh_key.dart';
 import 'i_storage_service.dart';
 
 final class JsonStorageService implements IStorageService {
@@ -95,4 +96,12 @@ final class JsonStorageService implements IStorageService {
       return Err(StorageError(e.toString()));
     }
   }
+
+  @override
+  Future<Result<List<SshKey>, StorageError>> loadSshKeys() =>
+      _loadList('ssh_keys', SshKey.fromJson);
+
+  @override
+  Future<Result<void, StorageError>> saveSshKeys(List<SshKey> keys) =>
+      _saveList('ssh_keys', keys, (k) => k.toJson());
 }
