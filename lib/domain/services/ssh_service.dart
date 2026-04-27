@@ -6,14 +6,16 @@ import 'package:dartssh2/dartssh2.dart';
 
 import '../../core/errors.dart';
 import '../../core/result.dart';
-import '../../core/secure_key.dart';
+import '../../data/models/auth_credentials.dart';
 import '../../data/models/server.dart';
 import '../../data/storage/debug_log_service.dart';
+import 'host_key_verifier.dart';
 
 abstract interface class SshClientFactory {
   Future<SSHClient> connect({
     required Server server,
-    required Uint8List keyBytes,
+    required AuthCredentials credentials,
+    required HostKeyVerifier verifier,
   });
 }
 
@@ -24,16 +26,49 @@ final class DefaultSshClientFactory implements SshClientFactory {
   @override
   Future<SSHClient> connect({
     required Server server,
-    required Uint8List keyBytes,
+    required AuthCredentials credentials,
+    required HostKeyVerifier verifier,
   }) async {
     final socket = await SSHSocket.connect(server.host, server.port)
         .timeout(_connectTimeout);
-    final client = SSHClient(
-      socket,
-      username: server.username,
-      identities: SSHKeyPair.fromPem(String.fromCharCodes(keyBytes)),
-      keepAliveInterval: const Duration(seconds: 30),
-    );
+
+    Future<bool> verifyHost(String type, Uint8List fingerprintBytes) {
+      // dartssh2 hands us the MD5 digest of the host key. We base64-encode it
+      // for stable string comparison and storage.
+      final fp = base64.encode(fingerprintBytes);
+      return Future.value(verifier.verify(
+        host: server.host,
+        port: server.port,
+        fingerprint: fp,
+      ));
+    }
+
+    final client = switch (credentials) {
+      KeyCreds(:final bytes, :final passphrase) => SSHClient(
+          socket,
+          username: server.username,
+          identities: SSHKeyPair.fromPem(
+            String.fromCharCodes(bytes),
+            passphrase,
+          ),
+          keepAliveInterval: const Duration(seconds: 30),
+          onVerifyHostKey: verifyHost,
+        ),
+      PasswordCreds(:final password) => SSHClient(
+          socket,
+          username: server.username,
+          onPasswordRequest: () => password,
+          keepAliveInterval: const Duration(seconds: 30),
+          onVerifyHostKey: verifyHost,
+        ),
+      InteractiveCreds(:final onPrompt) => SSHClient(
+          socket,
+          username: server.username,
+          onUserInfoRequest: (req) => onPrompt(req),
+          keepAliveInterval: const Duration(seconds: 30),
+          onVerifyHostKey: verifyHost,
+        ),
+    };
     await client.authenticated.timeout(_authTimeout);
     return client;
   }
@@ -51,7 +86,8 @@ final class SshConnection {
     int height = 24,
   }) async {
     final log = DebugLogService.instance;
-    log.log('SSH', 'openShell(width=$width, height=$height) — _activeShell avant: ${_activeShell == null ? "null" : "non-null"}');
+    log.log('SSH',
+        'openShell(width=$width, height=$height) — _activeShell avant: ${_activeShell == null ? "null" : "non-null"}');
     try {
       final shell = await client.shell(
         pty: SSHPtyConfig(width: width, height: height),
@@ -67,13 +103,15 @@ final class SshConnection {
 
   void sendCommand(String command) {
     final log = DebugLogService.instance;
-    log.log('SSH', 'sendCommand("$command") — _activeShell: ${_activeShell == null ? "NULL ← PROBLÈME" : "OK"}');
+    log.log('SSH',
+        'sendCommand("$command") — _activeShell: ${_activeShell == null ? "NULL ← PROBLÈME" : "OK"}');
     _activeShell?.write(Uint8List.fromList(utf8.encode('$command\n')));
   }
 
   void sendRaw(Uint8List bytes) {
     final log = DebugLogService.instance;
-    log.log('SSH', 'sendRaw(${bytes.length} bytes: ${bytes.take(8).toList()}) — _activeShell: ${_activeShell == null ? "NULL ← PROBLÈME" : "OK"}');
+    log.log('SSH',
+        'sendRaw(${bytes.length} bytes) — _activeShell: ${_activeShell == null ? "NULL ← PROBLÈME" : "OK"}');
     _activeShell?.write(bytes);
   }
 
@@ -86,19 +124,23 @@ final class SSHService {
 
   final SshClientFactory _factory;
 
-  Future<Result<SshConnection, AppError>> connect({
+  Future<Result<SshConnection, AppError>> connectWith({
     required Server server,
-    required SecureKey privateKey,
+    required AuthCredentials credentials,
+    required HostKeyVerifier verifier,
   }) async {
-    final keyBytes = Uint8List.fromList(privateKey.bytes);
-    privateKey.zeroise();
     try {
-      final client = await _factory.connect(server: server, keyBytes: keyBytes);
+      final client = await _factory.connect(
+        server: server,
+        credentials: credentials,
+        verifier: verifier,
+      );
       return Ok(SshConnection(client: client, server: server));
     } on SSHAuthFailError catch (e) {
       return Err(SshAuthError(e.toString()));
     } on TimeoutException {
-      return const Err(SshConnectionError('Délai dépassé — serveur injoignable ou authentification trop lente.'));
+      return const Err(SshConnectionError(
+          'Délai dépassé — serveur injoignable ou authentification trop lente.'));
     } catch (e) {
       return Err(SshConnectionError(e.toString()));
     }
