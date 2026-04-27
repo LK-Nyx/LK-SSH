@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models/settings.dart';
+import 'keys_screen.dart';
 import '../../data/ssh/toolbar_password_storage.dart';
 import '../../data/storage/debug_log_service.dart';
 import '../providers/secure_key_provider.dart';
@@ -225,6 +226,17 @@ class _SettingsBodyState extends ConsumerState<_SettingsBody> {
                 ),
               ),
             ],
+          ),
+        ),
+        const Divider(),
+        const _SectionHeader('Clés SSH'),
+        ListTile(
+          leading: const Icon(Icons.key),
+          title: const Text('Gérer les clés'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute<void>(builder: (_) => const KeysScreen()),
           ),
         ),
         const Divider(),
