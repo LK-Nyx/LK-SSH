@@ -25,10 +25,8 @@ class _SnippetEditorScreenState extends ConsumerState<SnippetEditorScreen> {
   @override
   void initState() {
     super.initState();
-    _labelCtrl =
-        TextEditingController(text: widget.snippet?.label ?? '');
-    _commandCtrl =
-        TextEditingController(text: widget.snippet?.command ?? '');
+    _labelCtrl = TextEditingController(text: widget.snippet?.label ?? '');
+    _commandCtrl = TextEditingController(text: widget.snippet?.command ?? '');
     _requireConfirm = widget.snippet?.requireConfirm ?? false;
     _autoExecute = widget.snippet?.autoExecute ?? true;
     _categoryId = widget.snippet?.categoryId ??
@@ -66,6 +64,50 @@ class _SnippetEditorScreenState extends ConsumerState<SnippetEditorScreen> {
     Navigator.pop(context);
   }
 
+  void _applyPreset(_SnippetPreset preset) {
+    setState(() {
+      _labelCtrl.text = preset.label;
+      _commandCtrl.text = preset.command;
+      _autoExecute = preset.autoExecute;
+    });
+    Navigator.pop(context);
+  }
+
+  void _showPresetsSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Text(
+                'Modèles',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ),
+            const Divider(height: 1),
+            for (final preset in _kPresets)
+              ListTile(
+                leading: Icon(preset.icon, color: preset.color, size: 22),
+                title: Text(preset.title),
+                subtitle: Text(
+                  preset.command,
+                  style: const TextStyle(fontFamily: 'monospace', fontSize: 11),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                onTap: () => _applyPreset(preset),
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final categoriesAsync = ref.watch(categoriesNotifierProvider);
@@ -75,6 +117,13 @@ class _SnippetEditorScreenState extends ConsumerState<SnippetEditorScreen> {
         title: Text(
           widget.snippet == null ? 'Nouveau snippet' : 'Éditer snippet',
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.auto_fix_high),
+            tooltip: 'Modèles',
+            onPressed: _showPresetsSheet,
+          ),
+        ],
       ),
       body: Form(
         key: _formKey,
@@ -150,3 +199,66 @@ class _SnippetEditorScreenState extends ConsumerState<SnippetEditorScreen> {
     );
   }
 }
+
+class _SnippetPreset {
+  const _SnippetPreset({
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.label,
+    required this.command,
+    required this.autoExecute,
+  });
+
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String label;
+  final String command;
+  final bool autoExecute;
+}
+
+// wayland-1 et /run/user/1000 sont les valeurs de ce système Niri.
+// XDG_RUNTIME_DIR est requis pour que les apps trouvent le socket Wayland.
+const _kPresets = [
+  _SnippetPreset(
+    icon: Icons.launch,
+    color: Color(0xFF00FF41),
+    title: 'Lancer une application (Wayland)',
+    label: '{application}',
+    command: 'WAYLAND_DISPLAY=wayland-1 XDG_RUNTIME_DIR=/run/user/1000 {application} &',
+    autoExecute: true,
+  ),
+  _SnippetPreset(
+    icon: Icons.launch,
+    color: Colors.blue,
+    title: 'Lancer une application (XWayland)',
+    label: '{application}',
+    command: 'DISPLAY=:1 {application} &',
+    autoExecute: true,
+  ),
+  _SnippetPreset(
+    icon: Icons.terminal,
+    color: Colors.amber,
+    title: 'Rejoindre une session tmux',
+    label: 'tmux {session}',
+    command: 'tmux attach -t {session}',
+    autoExecute: true,
+  ),
+  _SnippetPreset(
+    icon: Icons.add_box_outlined,
+    color: Colors.amber,
+    title: 'Nouvelle session tmux',
+    label: 'tmux new {session}',
+    command: 'tmux new-session -A -s {session}',
+    autoExecute: true,
+  ),
+  _SnippetPreset(
+    icon: Icons.list,
+    color: Colors.grey,
+    title: 'Lister les sessions tmux',
+    label: 'tmux ls',
+    command: 'tmux ls',
+    autoExecute: true,
+  ),
+];
