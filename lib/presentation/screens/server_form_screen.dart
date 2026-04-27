@@ -118,7 +118,7 @@ class _ServerFormScreenState extends ConsumerState<ServerFormScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           DropdownButtonFormField<String>(
-            value: keys.any((k) => k.id == _keyId) ? _keyId : null,
+            initialValue: keys.any((k) => k.id == _keyId) ? _keyId : null,
             decoration: const InputDecoration(
               labelText: 'Clé',
               border: OutlineInputBorder(),
@@ -238,7 +238,7 @@ class _ServerFormScreenState extends ConsumerState<ServerFormScreen> {
                 style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
             DropdownButtonFormField<AuthMethod>(
-              value: _authMethod,
+              initialValue: _authMethod,
               decoration: const InputDecoration(
                 labelText: 'Méthode',
                 border: OutlineInputBorder(),
