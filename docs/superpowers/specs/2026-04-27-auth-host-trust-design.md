@@ -32,6 +32,8 @@ Hors-scope (réservés à des phases ultérieures) :
 - Édition manuelle des fingerprints stockés (faisable au besoin via reset known_hosts)
 - Auth par certificat SSH
 
+**Mode D — flow d'unlock au boot** : pour supporter le multi-keys avec chiffrement Argon2id, P1 introduit un écran `UnlockScreen` qui demande la passphrase utilisateur au démarrage si `keyStorageMode == passphraseProtected` ET qu'il existe un vault ou une clé legacy mode D sur disque. La passphrase déverrouille un `SshKeyRegistryD` (vault `Map<keyId, {bytes, passphrase}>` chiffré au format Argon2id+AES-GCM) et reste en mémoire pour la session via un provider Riverpod `vaultPassphraseProvider`. Une action "Lock" dans les paramètres efface la passphrase mémoire et repush l'écran de unlock. Pour les users mode A, ce flow est invisible et le boot reste direct.
+
 ---
 
 ## Décisions de design
