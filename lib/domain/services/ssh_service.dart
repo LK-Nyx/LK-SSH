@@ -32,6 +32,7 @@ final class DefaultSshClientFactory implements SshClientFactory {
       socket,
       username: server.username,
       identities: SSHKeyPair.fromPem(String.fromCharCodes(keyBytes)),
+      keepAliveInterval: const Duration(seconds: 30),
     );
     await client.authenticated.timeout(_authTimeout);
     return client;
