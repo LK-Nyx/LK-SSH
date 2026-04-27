@@ -40,6 +40,29 @@ class SnippetsNotifier extends _$SnippetsNotifier {
     await storage.saveSnippets(updated);
     state = AsyncData(updated);
   }
+
+  Future<void> deleteByCategory(String categoryId) async {
+    final current = await future;
+    final updated = current.where((s) => s.categoryId != categoryId).toList();
+    final storage = await ref.read(storageProvider.future);
+    await storage.saveSnippets(updated);
+    state = AsyncData(updated);
+  }
+
+  Future<void> reorder(int oldIndex, int newIndex, String categoryId) async {
+    final current = await future;
+    final inCat = current.where((s) => s.categoryId == categoryId).toList();
+    if (newIndex > oldIndex) newIndex--;
+    inCat.insert(newIndex, inCat.removeAt(oldIndex));
+    // Reconstruire la liste complète en remplaçant les snippets de la catégorie
+    // dans leurs positions d'origine.
+    int catIdx = 0;
+    final result =
+        current.map((s) => s.categoryId == categoryId ? inCat[catIdx++] : s).toList();
+    final storage = await ref.read(storageProvider.future);
+    await storage.saveSnippets(result);
+    state = AsyncData(result);
+  }
 }
 
 @riverpod
@@ -66,6 +89,34 @@ class CategoriesNotifier extends _$CategoriesNotifier {
     await storage.saveCategories(updated);
     state = AsyncData(updated);
   }
+
+  Future<void> rename(String id, String label) async {
+    final current = await future;
+    final updated =
+        current.map((c) => c.id == id ? c.copyWith(label: label) : c).toList();
+    final storage = await ref.read(storageProvider.future);
+    await storage.saveCategories(updated);
+    state = AsyncData(updated);
+  }
+
+  Future<void> reorder(int oldIndex, int newIndex) async {
+    final current = await future;
+    final updated = [...current];
+    if (newIndex > oldIndex) newIndex--;
+    updated.insert(newIndex, updated.removeAt(oldIndex));
+    final storage = await ref.read(storageProvider.future);
+    await storage.saveCategories(updated);
+    state = AsyncData(updated);
+  }
+
+  Future<void> delete(String id) async {
+    final current = await future;
+    final updated = current.where((c) => c.id != id).toList();
+    final storage = await ref.read(storageProvider.future);
+    await storage.saveCategories(updated);
+    state = AsyncData(updated);
+    await ref.read(snippetsNotifierProvider.notifier).deleteByCategory(id);
+  }
 }
 
 Snippet newSnippet({
@@ -73,6 +124,7 @@ Snippet newSnippet({
   required String command,
   required String categoryId,
   bool requireConfirm = false,
+  bool autoExecute = true,
 }) =>
     Snippet(
       id: const Uuid().v4(),
@@ -80,4 +132,5 @@ Snippet newSnippet({
       command: command,
       categoryId: categoryId,
       requireConfirm: requireConfirm,
+      autoExecute: autoExecute,
     );

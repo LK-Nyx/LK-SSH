@@ -11,7 +11,7 @@ class MockSshClientFactory extends Mock implements SshClientFactory {}
 void main() {
   setUpAll(() {
     registerFallbackValue(
-      Server(id: '', label: '', host: '', port: 22, username: ''),
+      const Server(id: '', label: '', host: '', port: 22, username: ''),
     );
     registerFallbackValue(Uint8List(0));
   });
@@ -20,7 +20,7 @@ void main() {
     test('connect retourne SshConnectionError si la factory échoue', () async {
       final factory = MockSshClientFactory();
       final service = SSHService(factory);
-      final server = Server(
+      const server = Server(
         id: '1',
         label: 'test',
         host: '127.0.0.1',

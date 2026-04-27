@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' hide Category;
+
 import '../../core/errors.dart';
 import '../../core/result.dart';
 import '../models/category.dart';
@@ -20,13 +22,16 @@ final class JsonStorageService implements IStorageService {
     String name,
     T Function(Map<String, dynamic>) fromJson,
   ) async {
+    final file = _file(name);
     try {
-      final file = _file(name);
       if (!await file.exists()) return const Ok([]);
       final decoded = jsonDecode(await file.readAsString()) as List;
       return Ok(decoded.map((e) => fromJson(e as Map<String, dynamic>)).toList());
     } catch (e) {
-      return Err(StorageError(e.toString()));
+      // Fichier corrompu : on supprime et on repart vide plutôt que de bloquer l'app.
+      try { await file.delete(); } catch (_) {}
+      debugPrint('[LK-SSH] $name.json corrompu — reset: $e');
+      return const Ok([]);
     }
   }
 
@@ -69,13 +74,15 @@ final class JsonStorageService implements IStorageService {
 
   @override
   Future<Result<Settings, StorageError>> loadSettings() async {
+    final file = _file('settings');
     try {
-      final file = _file('settings');
       if (!await file.exists()) return const Ok(Settings());
       final decoded = jsonDecode(await file.readAsString()) as Map<String, dynamic>;
       return Ok(Settings.fromJson(decoded));
     } catch (e) {
-      return Err(StorageError(e.toString()));
+      try { await file.delete(); } catch (_) {}
+      debugPrint('[LK-SSH] settings.json corrompu — reset: $e');
+      return const Ok(Settings());
     }
   }
 

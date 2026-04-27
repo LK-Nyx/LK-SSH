@@ -24,7 +24,9 @@ mixin _$Snippet {
   String get label => throw _privateConstructorUsedError;
   String get command => throw _privateConstructorUsedError;
   String get categoryId => throw _privateConstructorUsedError;
-  bool get requireConfirm => throw _privateConstructorUsedError;
+  bool get requireConfirm =>
+      throw _privateConstructorUsedError; // false = insère le texte sans ↵ (snippet "variable")
+  bool get autoExecute => throw _privateConstructorUsedError;
 
   /// Serializes this Snippet to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -45,7 +47,8 @@ abstract class $SnippetCopyWith<$Res> {
       String label,
       String command,
       String categoryId,
-      bool requireConfirm});
+      bool requireConfirm,
+      bool autoExecute});
 }
 
 /// @nodoc
@@ -68,6 +71,7 @@ class _$SnippetCopyWithImpl<$Res, $Val extends Snippet>
     Object? command = null,
     Object? categoryId = null,
     Object? requireConfirm = null,
+    Object? autoExecute = null,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -90,6 +94,10 @@ class _$SnippetCopyWithImpl<$Res, $Val extends Snippet>
           ? _value.requireConfirm
           : requireConfirm // ignore: cast_nullable_to_non_nullable
               as bool,
+      autoExecute: null == autoExecute
+          ? _value.autoExecute
+          : autoExecute // ignore: cast_nullable_to_non_nullable
+              as bool,
     ) as $Val);
   }
 }
@@ -106,7 +114,8 @@ abstract class _$$SnippetImplCopyWith<$Res> implements $SnippetCopyWith<$Res> {
       String label,
       String command,
       String categoryId,
-      bool requireConfirm});
+      bool requireConfirm,
+      bool autoExecute});
 }
 
 /// @nodoc
@@ -127,6 +136,7 @@ class __$$SnippetImplCopyWithImpl<$Res>
     Object? command = null,
     Object? categoryId = null,
     Object? requireConfirm = null,
+    Object? autoExecute = null,
   }) {
     return _then(_$SnippetImpl(
       id: null == id
@@ -149,6 +159,10 @@ class __$$SnippetImplCopyWithImpl<$Res>
           ? _value.requireConfirm
           : requireConfirm // ignore: cast_nullable_to_non_nullable
               as bool,
+      autoExecute: null == autoExecute
+          ? _value.autoExecute
+          : autoExecute // ignore: cast_nullable_to_non_nullable
+              as bool,
     ));
   }
 }
@@ -161,7 +175,8 @@ class _$SnippetImpl implements _Snippet {
       required this.label,
       required this.command,
       required this.categoryId,
-      this.requireConfirm = false});
+      this.requireConfirm = false,
+      this.autoExecute = true});
 
   factory _$SnippetImpl.fromJson(Map<String, dynamic> json) =>
       _$$SnippetImplFromJson(json);
@@ -177,10 +192,14 @@ class _$SnippetImpl implements _Snippet {
   @override
   @JsonKey()
   final bool requireConfirm;
+// false = insère le texte sans ↵ (snippet "variable")
+  @override
+  @JsonKey()
+  final bool autoExecute;
 
   @override
   String toString() {
-    return 'Snippet(id: $id, label: $label, command: $command, categoryId: $categoryId, requireConfirm: $requireConfirm)';
+    return 'Snippet(id: $id, label: $label, command: $command, categoryId: $categoryId, requireConfirm: $requireConfirm, autoExecute: $autoExecute)';
   }
 
   @override
@@ -194,13 +213,15 @@ class _$SnippetImpl implements _Snippet {
             (identical(other.categoryId, categoryId) ||
                 other.categoryId == categoryId) &&
             (identical(other.requireConfirm, requireConfirm) ||
-                other.requireConfirm == requireConfirm));
+                other.requireConfirm == requireConfirm) &&
+            (identical(other.autoExecute, autoExecute) ||
+                other.autoExecute == autoExecute));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, id, label, command, categoryId, requireConfirm);
+  int get hashCode => Object.hash(
+      runtimeType, id, label, command, categoryId, requireConfirm, autoExecute);
 
   /// Create a copy of Snippet
   /// with the given fields replaced by the non-null parameter values.
@@ -224,7 +245,8 @@ abstract class _Snippet implements Snippet {
       required final String label,
       required final String command,
       required final String categoryId,
-      final bool requireConfirm}) = _$SnippetImpl;
+      final bool requireConfirm,
+      final bool autoExecute}) = _$SnippetImpl;
 
   factory _Snippet.fromJson(Map<String, dynamic> json) = _$SnippetImpl.fromJson;
 
@@ -237,7 +259,10 @@ abstract class _Snippet implements Snippet {
   @override
   String get categoryId;
   @override
-  bool get requireConfirm;
+  bool
+      get requireConfirm; // false = insère le texte sans ↵ (snippet "variable")
+  @override
+  bool get autoExecute;
 
   /// Create a copy of Snippet
   /// with the given fields replaced by the non-null parameter values.

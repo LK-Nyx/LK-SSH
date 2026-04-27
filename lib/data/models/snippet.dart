@@ -11,6 +11,8 @@ class Snippet with _$Snippet {
     required String command,
     required String categoryId,
     @Default(false) bool requireConfirm,
+    // false = insère le texte sans ↵ (snippet "variable")
+    @Default(true) bool autoExecute,
   }) = _Snippet;
 
   factory Snippet.fromJson(Map<String, dynamic> json) =>

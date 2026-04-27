@@ -20,6 +20,7 @@ class _SnippetEditorScreenState extends ConsumerState<SnippetEditorScreen> {
   late final TextEditingController _commandCtrl;
   late String _categoryId;
   late bool _requireConfirm;
+  late bool _autoExecute;
 
   @override
   void initState() {
@@ -29,6 +30,7 @@ class _SnippetEditorScreenState extends ConsumerState<SnippetEditorScreen> {
     _commandCtrl =
         TextEditingController(text: widget.snippet?.command ?? '');
     _requireConfirm = widget.snippet?.requireConfirm ?? false;
+    _autoExecute = widget.snippet?.autoExecute ?? true;
     _categoryId = widget.snippet?.categoryId ??
         widget.defaultCategoryId ??
         'system';
@@ -50,6 +52,7 @@ class _SnippetEditorScreenState extends ConsumerState<SnippetEditorScreen> {
         command: _commandCtrl.text.trim(),
         categoryId: _categoryId,
         requireConfirm: _requireConfirm,
+        autoExecute: _autoExecute,
       ));
     } else {
       notifier.replace(widget.snippet!.copyWith(
@@ -57,6 +60,7 @@ class _SnippetEditorScreenState extends ConsumerState<SnippetEditorScreen> {
         command: _commandCtrl.text.trim(),
         categoryId: _categoryId,
         requireConfirm: _requireConfirm,
+        autoExecute: _autoExecute,
       ));
     }
     Navigator.pop(context);
@@ -120,11 +124,17 @@ class _SnippetEditorScreenState extends ConsumerState<SnippetEditorScreen> {
               loading: () => const SizedBox.shrink(),
               error: (_, __) => const SizedBox.shrink(),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 4),
+            SwitchListTile(
+              title: const Text('Exécuter automatiquement'),
+              subtitle: const Text('Envoie la commande avec ↵'),
+              value: _autoExecute,
+              activeColor: const Color(0xFF00FF41),
+              onChanged: (v) => setState(() => _autoExecute = v),
+            ),
             SwitchListTile(
               title: const Text('Double confirmation'),
-              subtitle:
-                  const Text('Demande confirmation avant envoi'),
+              subtitle: const Text('Demande confirmation avant envoi'),
               value: _requireConfirm,
               activeColor: Colors.orange,
               onChanged: (v) => setState(() => _requireConfirm = v),

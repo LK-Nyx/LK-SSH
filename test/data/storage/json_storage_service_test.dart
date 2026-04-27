@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lk_ssh/core/result.dart';
 import 'package:lk_ssh/data/models/server.dart';
 import 'package:lk_ssh/data/models/settings.dart';
 import 'package:lk_ssh/data/storage/json_storage_service.dart';
@@ -24,7 +23,7 @@ void main() {
     });
 
     test('saveServers puis loadServers roundtrip', () async {
-      final server = Server(
+      const server = Server(
         id: '1',
         label: 'prod',
         host: '10.0.0.1',

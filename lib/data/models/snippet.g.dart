@@ -13,6 +13,7 @@ _$SnippetImpl _$$SnippetImplFromJson(Map<String, dynamic> json) =>
       command: json['command'] as String,
       categoryId: json['categoryId'] as String,
       requireConfirm: json['requireConfirm'] as bool? ?? false,
+      autoExecute: json['autoExecute'] as bool? ?? true,
     );
 
 Map<String, dynamic> _$$SnippetImplToJson(_$SnippetImpl instance) =>
@@ -22,4 +23,5 @@ Map<String, dynamic> _$$SnippetImplToJson(_$SnippetImpl instance) =>
       'command': instance.command,
       'categoryId': instance.categoryId,
       'requireConfirm': instance.requireConfirm,
+      'autoExecute': instance.autoExecute,
     };

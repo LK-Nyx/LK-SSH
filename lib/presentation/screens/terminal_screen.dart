@@ -8,9 +8,12 @@ import 'package:xterm/xterm.dart';
 import '../../data/models/server.dart';
 import '../../data/models/session.dart';
 import '../../data/models/settings.dart';
+import '../providers/diagnostic_provider.dart';
+import '../providers/keyboard_animation_provider.dart';
 import '../providers/secure_key_provider.dart';
 import '../providers/sessions_provider.dart';
 import '../providers/settings_provider.dart';
+import 'settings_screen.dart';
 import '../providers/ssh_provider.dart';
 import '../providers/terminal_provider.dart';
 import '../../data/storage/debug_log_service.dart';
@@ -97,7 +100,14 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
           err: (e) => _showError(e.message),
         );
       },
-      err: (e) => _showError(e.message),
+      err: (e) {
+        _showError(e.message);
+        if (!mounted) return;
+        Navigator.push(
+          context,
+          MaterialPageRoute<void>(builder: (_) => const SettingsScreen()),
+        );
+      },
     );
   }
 
@@ -151,10 +161,12 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
         };
         terminal.onResize = (cols, rows, pixelWidth, pixelHeight) {
           DebugLogService.instance.log('PTY', 'onResize: ${cols}x$rows (px: ${pixelWidth}x$pixelHeight)');
+          terminal.reflowEnabled = false;
           _ptyDebounce?.cancel();
           _ptyDebounce = Timer(const Duration(milliseconds: 50), () {
             DebugLogService.instance.log('PTY', 'resizeTerminal → ${cols}x$rows');
             shell.resizeTerminal(cols, rows);
+            terminal.reflowEnabled = true;
           });
         };
         // xterm peut avoir redimensionné AVANT que onResize soit défini
@@ -224,10 +236,11 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
       ),
     );
 
-    final toolbarEditMode = ref.watch(
-      keyboardToolbarProvider(_activeSessionId).select((s) => s.editMode),
-    );
-
+    // Layout classique : le Scaffold shrink le body quand le clavier s'ouvre
+    // → le PTY reste toujours correctement dimensionné sur la zone visible.
+    // RepaintBoundary isole le terminal des repaints de la barre basse.
+    // _TerminalBottomBar gère isKeyboardAnimatingProvider pour bloquer
+    // autoResize frame-par-frame et éviter les 3 fps pendant l'animation.
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -240,22 +253,95 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
               onClose: _closeSession,
             ),
             Expanded(
-              child: _TerminalView(sessionId: _activeSessionId),
+              child: RepaintBoundary(
+                child: _TerminalView(sessionId: _activeSessionId),
+              ),
             ),
-            TapRegion(
-              enabled: toolbarEditMode,
-              onTapOutside: (_) => ref
-                  .read(keyboardToolbarProvider(_activeSessionId).notifier)
-                  .toggleEditMode(),
-              child: KeyboardToolbar(sessionId: _activeSessionId),
-            ),
-            SnippetPanel(
+            _TerminalBottomBar(
               sessionId: _activeSessionId,
               serverId: activeSession.serverId,
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+// _TerminalBottomBar est ConsumerStatefulWidget pour deux raisons :
+// 1. didChangeDependencies détecte les changements de viewInsets (animation
+//    du clavier) et met à jour isKeyboardAnimatingProvider — ce qui permet
+//    à _TerminalViewState de bloquer autoResize pendant l'animation et donc
+//    d'éviter les terminal.resize() (et repaints) frame par frame.
+// 2. Le build lui-même lit viewInsets pour masquer le SnippetPanel en paysage.
+class _TerminalBottomBar extends ConsumerStatefulWidget {
+  const _TerminalBottomBar({
+    required this.sessionId,
+    required this.serverId,
+  });
+
+  final String sessionId;
+  final String serverId;
+
+  @override
+  ConsumerState<_TerminalBottomBar> createState() => _TerminalBottomBarState();
+}
+
+class _TerminalBottomBarState extends ConsumerState<_TerminalBottomBar> {
+  Timer? _animDebounce;
+  // Initialisé à -1 pour que la première vraie valeur (0 ou plus) soit
+  // toujours détectée comme un changement.
+  double _lastInset = -1;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final inset = MediaQuery.viewInsetsOf(context).bottom;
+    if (inset == _lastInset) return;
+    _lastInset = inset;
+    // On ne peut pas écrire dans un provider pendant le build ;
+    // on diffère au frame suivant via postFrameCallback.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(isKeyboardAnimatingProvider.notifier).state = true;
+      _animDebounce?.cancel();
+      _animDebounce = Timer(const Duration(milliseconds: 350), () {
+        if (mounted) {
+          ref.read(isKeyboardAnimatingProvider.notifier).state = false;
+        }
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _animDebounce?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
+    final screenH = MediaQuery.sizeOf(context).height;
+    // TabBar(40) + KeyboardToolbar(44) + SnippetPanel(116) + terminal min(60)
+    final showSnippets = (screenH - keyboardInset) > 260;
+    final toolbarEditMode = ref.watch(
+      keyboardToolbarProvider(widget.sessionId).select((s) => s.editMode),
+    );
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        TapRegion(
+          enabled: toolbarEditMode,
+          onTapOutside: (_) => ref
+              .read(keyboardToolbarProvider(widget.sessionId).notifier)
+              .toggleEditMode(),
+          child: KeyboardToolbar(sessionId: widget.sessionId),
+        ),
+        if (showSnippets)
+          SnippetPanel(sessionId: widget.sessionId, serverId: widget.serverId),
+      ],
     );
   }
 }
@@ -389,16 +475,23 @@ class _TerminalViewState extends ConsumerState<_TerminalView> {
         14.0;
     _pendingSize = fontSize;
     _pinchStartSize = fontSize;
-    // S'assurer que le reflow est actif (peut rester false si widget reconstruit)
-    ref.read(terminalProvider(widget.sessionId)).reflowEnabled = true;
+
+    // autofocus: true → le clavier s'ouvre immédiatement au montage.
+    // On bloque autoResize dès le 1er frame pour qu'aucun terminal.resize()
+    // ne soit émis pendant l'animation initiale du clavier.
+    // _TerminalBottomBar.didChangeDependencies() prendra le relais et
+    // réinitialisera isKeyboardAnimatingProvider quand le clavier sera stable.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref.read(isKeyboardAnimatingProvider.notifier).state = true;
+      }
+    });
   }
 
   @override
   void dispose() {
     _debounce?.cancel();
     _contextMenuController.remove();
-    // Rétablir le reflow si le widget est détruit pendant un pinch
-    ref.read(terminalProvider(widget.sessionId)).reflowEnabled = true;
     super.dispose();
   }
 
@@ -408,9 +501,6 @@ class _TerminalViewState extends ConsumerState<_TerminalView> {
       final positions = _pointers.values.toList();
       _pinchStartDistance = (positions[0] - positions[1]).distance;
       _pinchStartSize = _pendingSize;
-      // Désactiver le reflow pendant le pinch pour éviter les artefacts visuels
-      // (xterm redispose tout le buffer à chaque changement de taille sinon)
-      ref.read(terminalProvider(widget.sessionId)).reflowEnabled = false;
     }
   }
 
@@ -439,18 +529,12 @@ class _TerminalViewState extends ConsumerState<_TerminalView> {
 
   void _onPointerUp(PointerUpEvent event) {
     _pointers.remove(event.pointer);
-    if (_pointers.length < 2) {
-      _pinchStartDistance = null;
-      ref.read(terminalProvider(widget.sessionId)).reflowEnabled = true;
-    }
+    if (_pointers.length < 2) _pinchStartDistance = null;
   }
 
   void _onPointerCancel(PointerCancelEvent event) {
     _pointers.remove(event.pointer);
-    if (_pointers.length < 2) {
-      _pinchStartDistance = null;
-      ref.read(terminalProvider(widget.sessionId)).reflowEnabled = true;
-    }
+    if (_pointers.length < 2) _pinchStartDistance = null;
   }
 
   void _showContextMenu({
@@ -506,7 +590,15 @@ class _TerminalViewState extends ConsumerState<_TerminalView> {
       },
     );
 
+    ref.watch(sshNotifierProvider(widget.sessionId));
     final terminal = ref.watch(terminalProvider(widget.sessionId));
+    final diagSize = ref.watch(diagnosticFontSizeProvider);
+    final effectiveSize = diagSize ?? _pendingSize;
+    // autoResize: false pendant le zoom ou l'animation du clavier.
+    // → aucun terminal.resize() frame par frame → aucun repaint frame par frame.
+    // Un seul resize est émis quand autoResize repasse à true.
+    final isZooming = _pinchStartDistance != null || diagSize != null;
+    final isKeyboardAnimating = ref.watch(isKeyboardAnimatingProvider);
 
     return Listener(
       behavior: HitTestBehavior.translucent,
@@ -518,7 +610,8 @@ class _TerminalViewState extends ConsumerState<_TerminalView> {
         terminal,
         controller: _controller,
         autofocus: true,
-        textStyle: TerminalStyle(fontSize: _pendingSize),
+        autoResize: !isZooming && !isKeyboardAnimating,
+        textStyle: TerminalStyle(fontSize: effectiveSize),
         onSecondaryTapDown: (details, offset) async {
           _contextMenuController.remove();
           final selection = _controller.selection;
