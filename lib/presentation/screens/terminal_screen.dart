@@ -40,11 +40,25 @@ class TerminalScreen extends ConsumerStatefulWidget {
 class _TerminalScreenState extends ConsumerState<TerminalScreen> {
   late String _activeSessionId;
   Timer? _ptyDebounce;
+  final _inactivityTimers = <String, Timer>{};
 
   @override
   void dispose() {
     _ptyDebounce?.cancel();
+    for (final t in _inactivityTimers.values) { t.cancel(); }
     super.dispose();
+  }
+
+  void _resetInactivityTimer(String sessionId) {
+    _inactivityTimers[sessionId]?.cancel();
+    final minutes = ref.read(settingsNotifierProvider).valueOrNull?.sessionTimeoutMinutes ?? 5;
+    if (minutes <= 0) return;
+    _inactivityTimers[sessionId] = Timer(Duration(minutes: minutes), () {
+      _inactivityTimers.remove(sessionId);
+      if (!mounted) return;
+      _log(sessionId, 'Timeout d\'inactivité ($minutes min) — déconnexion');
+      ref.read(sshNotifierProvider(sessionId).notifier).disconnect();
+    });
   }
 
   @override
@@ -149,6 +163,7 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
           (data) => terminal.write(utf8.decode(data, allowMalformed: true)),
         );
         terminal.onOutput = (data) {
+          _resetInactivityTimer(sessionId);
           final mod =
               ref.read(keyboardToolbarProvider(sessionId)).activeMod;
           final bytes = AnsiService.applyMod(data, mod);
@@ -179,8 +194,10 @@ class _TerminalScreenState extends ConsumerState<TerminalScreen> {
           }
         });
         shell.done.then((_) {
+          _inactivityTimers.remove(sessionId)?.cancel();
           if (mounted) _showError('Session terminée par le serveur');
         });
+        _resetInactivityTimer(sessionId);
       },
       err: (e) => _showError(e.toString()),
     );
