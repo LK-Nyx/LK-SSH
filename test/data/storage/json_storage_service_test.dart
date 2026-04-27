@@ -43,11 +43,15 @@ void main() {
       expect(result.value, const Settings());
     });
 
-    test('fichier JSON corrompu retourne Err', () async {
+    test('fichier JSON corrompu est reset et retourne liste vide', () async {
+      // Comportement délibéré du _loadList : on supprime le fichier corrompu
+      // et on repart vide plutôt que de bloquer l'app au démarrage.
       final f = File('${tmpDir.path}/servers.json');
       await f.writeAsString('not json {{');
       final result = await storage.loadServers();
-      expect(result.isErr, isTrue);
+      expect(result.isOk, isTrue);
+      expect(result.value, isEmpty);
+      expect(await f.exists(), isFalse);
     });
 
     test('saveSshKeys puis loadSshKeys roundtrip', () async {

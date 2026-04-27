@@ -155,7 +155,7 @@ class _SnippetEditorScreenState extends ConsumerState<SnippetEditorScreen> {
             const SizedBox(height: 12),
             categoriesAsync.when(
               data: (categories) => DropdownButtonFormField<String>(
-                value: _categoryId,
+                initialValue: _categoryId,
                 decoration: const InputDecoration(
                   labelText: 'Catégorie',
                   border: OutlineInputBorder(),
@@ -178,14 +178,14 @@ class _SnippetEditorScreenState extends ConsumerState<SnippetEditorScreen> {
               title: const Text('Exécuter automatiquement'),
               subtitle: const Text('Envoie la commande avec ↵'),
               value: _autoExecute,
-              activeColor: const Color(0xFF00FF41),
+              activeThumbColor: const Color(0xFF00FF41),
               onChanged: (v) => setState(() => _autoExecute = v),
             ),
             SwitchListTile(
               title: const Text('Double confirmation'),
               subtitle: const Text('Demande confirmation avant envoi'),
               value: _requireConfirm,
-              activeColor: Colors.orange,
+              activeThumbColor: Colors.orange,
               onChanged: (v) => setState(() => _requireConfirm = v),
             ),
             const SizedBox(height: 24),
