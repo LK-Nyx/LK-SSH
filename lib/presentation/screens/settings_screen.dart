@@ -1,10 +1,12 @@
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models/settings.dart';
+import '../design/_gallery_screen.dart';
 import 'keys_screen.dart';
 import '../../data/ssh/toolbar_password_storage.dart';
 import '../../data/storage/debug_log_service.dart';
@@ -292,6 +294,18 @@ class _SettingsBodyState extends ConsumerState<_SettingsBody> {
                 fontFamily: 'monospace',
                 fontSize: 11,
                 color: Color(0xFF00FF41),
+              ),
+            ),
+          ),
+        if (kDebugMode)
+          ListTile(
+            title: const Text('Design Gallery'),
+            subtitle: const Text('Tokens et primitives du design system'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute<void>(
+                builder: (_) => const DesignGalleryScreen(),
               ),
             ),
           ),

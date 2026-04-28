@@ -13,6 +13,7 @@ import 'data/ssh/ssh_key_registry_a.dart';
 import 'data/ssh/ssh_key_registry_d.dart';
 import 'data/storage/debug_log_service.dart';
 import 'data/storage/json_storage_service.dart';
+import 'presentation/design/theme/app_theme.dart' as ds;
 import 'presentation/providers/vault_passphrase_provider.dart';
 import 'presentation/screens/server_list_screen.dart';
 import 'presentation/screens/unlock_screen.dart';
@@ -140,7 +141,7 @@ class _UnlockGateState extends ConsumerState<_UnlockGate> {
     }
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: _appTheme(),
+      theme: ds.AppTheme.dark(),
       home: UnlockScreen(
         onSubmit: (passphrase) async {
           final ok = await _verify(passphrase);
@@ -154,19 +155,6 @@ class _UnlockGateState extends ConsumerState<_UnlockGate> {
   }
 }
 
-ThemeData _appTheme() => ThemeData.dark(useMaterial3: true).copyWith(
-      scaffoldBackgroundColor: const Color(0xFF0D0D0D),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: Color(0xFF0D0D0D),
-        foregroundColor: Color(0xFF00FF41),
-        elevation: 0,
-      ),
-      colorScheme: const ColorScheme.dark(
-        primary: Color(0xFF00FF41),
-        surface: Color(0xFF1A1A1A),
-      ),
-    );
-
 class LkSshApp extends ConsumerWidget {
   const LkSshApp({super.key});
 
@@ -175,7 +163,7 @@ class LkSshApp extends ConsumerWidget {
     return MaterialApp(
       title: 'LK-SSH',
       debugShowCheckedModeBanner: false,
-      theme: _appTheme(),
+      theme: ds.AppTheme.dark(),
       home: const ServerListScreen(),
     );
   }
