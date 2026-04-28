@@ -1041,7 +1041,7 @@ class _AppTextFieldState extends State<AppTextField> {
             ),
             padding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.md,
-              vertical: AppSpacing.sm + 2,
+              vertical: AppSpacing.md,
             ),
             child: Row(
               children: [
@@ -1482,7 +1482,7 @@ class AppCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.lg,
-        vertical: AppSpacing.md - 2,
+        vertical: AppSpacing.md,
       ),
       decoration: const BoxDecoration(
         color: AppColors.bgCanvas,
