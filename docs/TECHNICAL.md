@@ -477,3 +477,31 @@ dartssh2 fournit le digest MD5 du host key (typedef `SSHHostkeyVerifyHandler`). 
 ### Prompts à la connexion
 
 `sshNotifier` expose `Stream<AuthPromptRequest>` (sealed : `PasswordPromptRequest` / `KbInteractivePromptRequest` / `HostKeyMismatchRequest`, chacun avec son `Completer`). `terminal_screen` souscrit par sessionId et dispatche vers la bottom sheet correspondante. Au dispose, les Completers en attente sont résolus avec une valeur de cancel pour ne pas bloquer le `connect()` Future.
+
+---
+
+## Design System Foundation
+
+Sous-projet implémenté sur la branche `feat/design-system-foundation`.
+Spec : [`docs/superpowers/specs/2026-04-28-design-system-foundation-design.md`](superpowers/specs/2026-04-28-design-system-foundation-design.md).
+Plan : [`docs/superpowers/plans/2026-04-28-design-system-foundation.md`](superpowers/plans/2026-04-28-design-system-foundation.md).
+
+### Tokens
+
+`lib/presentation/design/tokens/` — `AppColors`, `AppTypography`, `AppSpacing`, `AppRadius`, `AppBorders`, `AppMotion`. Direction "matrix raffiné" (canvas `#0A0A0A` + accent vert sage `#3FCB3F` + neon `#00FF41` réservé au focus glow). Police mono = JetBrains Mono (embarquée Regular + Bold), sans = system Roboto sur Android.
+
+### Focus glow
+
+Règle : le `border` reste la teinte calme et lisible (corail `#FF5C5C` en erreur, sage `#3FCB3F` en accent), le `glow` utilise la version neon de la même teinte. `AppColors.focusGlow(state)` retourne le `BoxShadow` paramétré par `FocusGlowState` (accent / error / warning / info). En erreur + focus, opacité poussée à 0.60 et blur 16 pour rester lisible.
+
+### Primitives
+
+`lib/presentation/design/widgets/` — `AppButton` (4 variantes × états dont loading), `AppTextField` (focus glow couleur-conditionné, mono toggle), `AppTile` (leading/trailing/badge/active marker), `AppCard` (header/body/footer slots), `AppSheet` + helper `showAppSheet`. Les écrans existants ne sont pas migrés vers ces primitives dans ce sous-projet — c'est l'objet des sous-projets ultérieurs.
+
+### Theme
+
+`AppTheme.dark()` (importé en `as ds` dans `main.dart` pour éviter le conflit avec l'enum `AppTheme { dark, light }` de `Settings`) produit un `ThemeData` Material 3 mappé sur les tokens. Les widgets Material existants restent dans le ton tant qu'ils ne sont pas migrés.
+
+### Gallery debug
+
+`Settings → Debug → Design Gallery` (visible uniquement en `kDebugMode`) liste toutes les primitives et leurs états pour validation visuelle sur device.
