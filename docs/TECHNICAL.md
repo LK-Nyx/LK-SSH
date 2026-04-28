@@ -424,7 +424,7 @@ xterm réordonne les lignes du buffer quand la largeur change (`terminal.resize(
 | `path_provider` | ^2.1.3 | Répertoire documents application |
 | `uuid` | ^4.4.0 | Génération d'identifiants UUID v4 |
 
-**Code generation :** `dart run build_runner build --delete-conflicting-outputs`  
+**Code generation :** `dart run build_runner build --delete-conflicting-outputs`
 Fichiers générés : `*.freezed.dart`, `*.g.dart` (ne pas modifier manuellement)
 
 ---
