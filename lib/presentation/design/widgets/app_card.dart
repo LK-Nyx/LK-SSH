@@ -71,7 +71,7 @@ class AppCard extends StatelessWidget {
     final h = _header();
     final f = _footer();
     return Container(
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: AppColors.bgSurface,
         border: Border.fromBorderSide(AppBorders.standard),
         borderRadius: AppRadius.all12,

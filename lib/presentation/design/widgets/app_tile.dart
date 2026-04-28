@@ -25,8 +25,9 @@ class AppTileLeading {
 enum _TrailingKind { none, chevron, indicator }
 
 class AppTileTrailing {
-  const AppTileTrailing._({this.kind = _TrailingKind.none, this.color});
-  final _TrailingKind kind;
+  const AppTileTrailing._({_TrailingKind kind = _TrailingKind.none, this.color})
+      : _kind = kind;
+  final _TrailingKind _kind;
   final Color? color;
 
   factory AppTileTrailing.chevron() =>
@@ -91,8 +92,8 @@ class AppTile extends StatelessWidget {
   }
 
   Widget? _trailingWidget(AppTileTrailing? t) {
-    if (t == null || t.kind == _TrailingKind.none) return null;
-    if (t.kind == _TrailingKind.chevron) {
+    if (t == null || t._kind == _TrailingKind.none) return null;
+    if (t._kind == _TrailingKind.chevron) {
       return const Icon(Icons.chevron_right,
           size: 18, color: AppColors.contentSecondary);
     }

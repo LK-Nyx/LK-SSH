@@ -23,12 +23,11 @@ void main() {
     });
 
     testWidgets('does not fire onPressed when disabled', (tester) async {
-      var pressed = 0;
       await tester.pumpWidget(_wrap(
-        AppButton(label: 'Connect', onPressed: null),
+        const AppButton(label: 'Connect', onPressed: null),
       ));
       await tester.tap(find.byType(AppButton));
-      expect(pressed, 0);
+      // No callback to verify; tapping a null-onPressed button must not crash.
     });
 
     testWidgets('isLoading replaces label with spinner', (tester) async {

@@ -5,16 +5,16 @@ import 'package:lk_ssh/presentation/design/widgets/app_sheet.dart';
 void main() {
   group('AppSheet', () {
     testWidgets('renders title, subtitle, body, actions', (tester) async {
-      await tester.pumpWidget(MaterialApp(
+      await tester.pumpWidget(const MaterialApp(
         home: Scaffold(
           body: AppSheet(
             title: 'Host key changed',
             subtitle: 'fingerprint different',
-            actions: const [
+            actions: [
               Text('Cancel'),
               Text('Reject'),
             ],
-            child: const Text('diff content'),
+            child: Text('diff content'),
           ),
         ),
       ));
@@ -26,12 +26,12 @@ void main() {
     });
 
     testWidgets('omits subtitle when null', (tester) async {
-      await tester.pumpWidget(MaterialApp(
+      await tester.pumpWidget(const MaterialApp(
         home: Scaffold(
           body: AppSheet(
             title: 'Confirm',
-            actions: const [Text('OK')],
-            child: const Text('body'),
+            actions: [Text('OK')],
+            child: Text('body'),
           ),
         ),
       ));

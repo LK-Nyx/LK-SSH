@@ -31,9 +31,9 @@ void main() {
     });
 
     testWidgets('renders footer slot', (tester) async {
-      await tester.pumpWidget(_wrap(AppCard(
-        footer: Row(children: const [Text('action')]),
-        child: const Text('body'),
+      await tester.pumpWidget(_wrap(const AppCard(
+        footer: Row(children: [Text('action')]),
+        child: Text('body'),
       )));
       expect(find.text('action'), findsOneWidget);
     });
